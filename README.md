@@ -10,7 +10,7 @@ Eine Wetterstation mit Arduino + BME208 und  LC-Display
   |        4x20 LC-Display          |
   |                                 |
   |                                 |
-  | D3 D2 D1 D0         Bl En RW RS |
+  | D7 D6 D5 D4         Bl En RW RS |
    ---------------------------------
     |  |  |  |          |  |  |  |
     |  |  |  |          |  |  |  |
