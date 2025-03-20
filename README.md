@@ -1,12 +1,8 @@
-   | | |     .---._____
-  .-----.   |          |
---|o    |---| littlefs |
---|     |---|          |
-  '-----'   '----------'
-   | | |
+## Wetterstation
 
+Eine Wetterstation mit Arduino + BME208 und  LC-Display
 
-
+```
 
    ---------------------------------
   |                                 |
@@ -51,4 +47,7 @@
    ---------------------------------
 
    
+```
+
+**Anzeigen von Uhrzeit
    
