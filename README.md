@@ -49,5 +49,5 @@ Eine Wetterstation mit Arduino + BME208 und  LC-Display
    
 ```
 
-**Anzeigen von Uhrzeit
+**Anzeigen von Uhrzeit** - Die Uhrzeit wird beim Start aus dem Tiny-RTC Modul ausgelesen und dann im Controller weitergerechnet.
    
