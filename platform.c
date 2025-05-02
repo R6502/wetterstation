@@ -3,96 +3,52 @@
 /******************************************************************************/
 
 #include <stdint.h>
-#include <io.h>
-#include <i2c.h>
 
 #include "platform.h"
 
 /******************************************************************************/
 
-// 16 -> 115200 bit/s bei  U2X0 == 1
+//int16_t         adjust_num,
+//                adjust_den,
+//                adjust_control,
+//                adjust_dir;
 
-void uart0_init (unsigned int ubrr)
-{
-  /* set bitrate */
-  UBRR0L  = (unsigned char) (ubrr & 0xff);
-  UBRR0H  = (unsigned char) (ubrr >> 8);
+/******************************************************************************/
 
-  DDRE |= (1 << PORTE1);
-
-  UCSR0A = 0
-           | (1 << U2X0) /*  Double the USART transmission speed */
-           ;
-
-  UCSR0C = 0        /* Asynchronous USART, 1 stop bit, no parity */
-           | (1 << UCSZ01)  /* Set 8-bit frame format */
-           | (1 << UCSZ00)
-           ;
-
-  /* Enable transmitter */
-  UCSR0B = 0
-           | (1 << TXEN0)
-           | (1 << RXEN0)
-           ;
-} /* uart0_init */
-
-
-void uart0_tx (uint8_t txbyte)
-{
-  /* Wait until the previous transmission has ended */
-  while ((UCSR0A & (1 << UDRE0)) == 0) {
-    /* empty */
-  }
-  /* Put the data into tx buffer */
-  UDR0 = txbyte;
-} /* uart0_tx */
-
-
-uint8_t uart0_rx (void)
-{
-  uint8_t rxbyte = 0;
-
-  /* Wait for data to be received */
-  if ((UCSR0A & (1 << RXC0)) != 0) {
-    /* Get and return received data from buffer */
-    rxbyte = UDR0;
-  }
-
-  return rxbyte;
-} /* uart0_rx */
-
-
-void serial_print_text (const char *text)
-{
-  while (*text) {
-    uart0_tx (*text++);
-  }
-} /* serial_print_text */
-
+static volatile uint16_t timebase_ticks_ms = 0;
 
 /******************************************************************************/
 
 
-static volatile uint16_t timebase_ticks_ms = 0;
-
-
-//interrupt [TIM0_COMPA] void timer0_compa_isr (void)
-//{
-//  // TIFR0
-//  timebase_ticks_ms ++;
-//  //uart0_tx ('*');
-//} /* timer0_compa_isr */
-
-
+#if defined (__AVR__)
+/* AVR GCC */
+ISR(TIMER0_OVF_vect)
+#else
+/* Codevision */
 interrupt [TIM0_OVF] void timer0_overflow_isr (void)
+#endif
 {
   timebase_ticks_ms ++;
-  //uart0_tx ('*');
+
+  //if (adjust_control < adjust_den) {
+  //  adjust_control += adjust_num;
+  //}
+  //else {
+  //  adjust_control -= adjust_den;
+  //  timebase_ticks_ms += adjust_dir;
+  //  //uart0_tx ('.');
+  //}
 } /* timer0_overflow_isr */
 
 
 void timebase_init (void)
 {
+  // //adjust_num = 25; // 0.248% auf Arduino/Marie
+  // adjust_num = 31; // 0.31% auf Arduino 2
+  // adjust_den = 10000;
+  // adjust_control = 0;
+  // adjust_dir = 1;
+
   /* 8-bit Timer/Counter0: Zeitbasis für 1ms Tick
      Three Independent Interrupt Sources (TOV0, OCF0A, and OCF0B)
 
@@ -148,18 +104,21 @@ uint16_t millis (void)
 {
   uint16_t now = 0;
 
-  //cli ();
+//  cli ();
 
-#asm
-  cli /* disable interrupts */
-#endasm
+//#asm
+//  cli /* disable interrupts */
+//#endasm
 
-  now = timebase_ticks_ms;
+  do {
+    now = timebase_ticks_ms;
+  } while (now != timebase_ticks_ms);
 
-  //sei ();
-#asm
-  sei /* enable interrupts */
-#endasm
+//  sei ();
+
+//#asm
+//  sei /* enable interrupts */
+//#endasm
 
   return now;
 } /* millis */
@@ -190,17 +149,6 @@ void mdelay_us (uint16_t dt_us)
 } /* mdelay_us */
 
 
-// void mdelay_us (uint8_t dt_us)
-// {
-//   uint8_t t_start = TCNT0; // TODO: anderen Timer (16bit) verwenden
-//   dt_us >>= 2;
-//   if (dt_us == 0) dt_us = 1;
-//   while ((TCNT0 - t_start) < dt_us) {
-//     /* nix */
-//   }
-// } /* mdelay_us */
-
-
 void mdelay_ms (uint16_t dt_ms)
 {
   uint16_t t_start = millis ();
@@ -213,7 +161,15 @@ void mdelay_ms (uint16_t dt_ms)
 
 /******************************************************************************/
 
+// #if defined(__CODEVISIONAVR__)
+#if defined (__AVR__)
 
+/* AVR GCC */
+/* .... */
+
+#else
+
+/* Codevision */
 void sei (void)
 {
 #asm
@@ -228,6 +184,8 @@ void cli (void)
   cli /* disable interrupts */
 #endasm
 } /* cli */
+
+#endif
 
 
 /******************************************************************************/

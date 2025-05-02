@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>7.0</ProjectVersion>
     <ToolchainName>com.HPInfoTech.CodeVisionAVR.C</ToolchainName>
-    <ProjectGuid>{F19C4A31-423D-497C-A76A-A46C3F34E8A0}</ProjectGuid>
+    <ProjectGuid>{A39961C9-423D-497C-A76A-A46C3F34E8A0}</ProjectGuid>
     <avrdevice>ATmega2560</avrdevice>
     <avrdeviceseries>none</avrdeviceseries>
     <OutputType>Executable</OutputType>
@@ -60,6 +60,15 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="bmp280.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="keypad.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="textfunc.c">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
