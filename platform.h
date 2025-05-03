@@ -85,9 +85,9 @@ uint8_t keypad_read (void);
 
 /******************************************************************************/
 
-extern uint8_t time_hour,
-               time_minutes,
-               time_seconds;
+extern uint8_t zeit_sekunden_bcd;
+extern uint8_t zeit_minuten_bcd;
+extern uint8_t zeit_stunden_bcd;
 
 void update_time (void);
 void rtc_read (void);
