@@ -186,13 +186,6 @@ void lcd_display_on (void)
 } /* lcd_display_on */
 
 
-void lcd_cursor_off (void)
-{
-  lcd_displaycontrol &= ~LCD_CURSORON;
-  lcd_command (LCD_DISPLAYCONTROL | lcd_displaycontrol);
-} /* lcd_cursor_off */
-
-
 void lcd_backlight_off (void)
 {
   lcd_backlightval = LCD_NOBACKLIGHT;

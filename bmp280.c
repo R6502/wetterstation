@@ -40,13 +40,6 @@ uint8_t  bmp280_id;
 
 /******************************************************************************/
 
-int32_t muls32 (int32_t a, int32_t b)
-{
- return a*b;
-}
-
-/******************************************************************************/
-
 // we create a struct for this, so that we can add support for two
 // sensors on a I2C bus
 static union _bmp280_cal_union {
@@ -258,15 +251,12 @@ void bmp280_read (void)
   pres_raw >>= 4;
 
   /* compute the temperature */
-  //var1 = ((((temp_raw >> 3) - ((int32_t)bmp280_cal.v.dig_t1 << 1))) * ((int32_t)bmp280_cal.v.dig_t2)) / 2048;
   var1 = ((((temp_raw >> 3) - ((int32_t)bmp280_cal.v.dig_t1 << 1))) * ((int32_t)bmp280_cal.v.dig_t2)) ;
-  //var1 = muls32 ( (temp_raw >> 3) - ((int32_t)bmp280_cal.v.dig_t1 << 1), (int32_t)bmp280_cal.v.dig_t2);
   var1 /= 2048;
 
   var2 = ((temp_raw >> 4) - ((int32_t)bmp280_cal.v.dig_t1));
 
   var2 *= var2;
-  //var2 = muls32 (var2, var2);
 
   var2 >>= 12;
   var2 *= ((int32_t)bmp280_cal.v.dig_t3);

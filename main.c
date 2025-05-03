@@ -130,6 +130,7 @@ void zaehler_anzeigen (uint8_t zaehler_wert)
 } /* zaehler_anzeigen */
 
 
+ /*****************************************************************************************************/
 
 
 #if defined (__AVR__)

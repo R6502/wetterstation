@@ -89,19 +89,16 @@ extern uint8_t zeit_sekunden_bcd;
 extern uint8_t zeit_minuten_bcd;
 extern uint8_t zeit_stunden_bcd;
 
-void update_time (void);
 void rtc_read (void);
 void rtc_write (void);
 
 /******************************************************************************/
 
-#define MAX_TEXT_BUFFER 25
+#define MAX_TEXT_BUFFER 16
 #define TEXT_BUFFER_RIGHT 10
 extern char text_buffer [MAX_TEXT_BUFFER];
 
 /******************************************************************************/
-
-
 
 #endif /* PLATFORM_H */
 
