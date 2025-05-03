@@ -37,7 +37,7 @@ void wetterdaten_anzeigen ()
   /* Temperatur */
   lcd_set_cursor (0, 1);
   if (bmp280_id) {
-    int32_to_text_decimal (bmp280_temp, 3);
+    int32_to_text_decimal (bmp280_temp, 2);
     insert_decimal_point10 ();
     lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 4);
     lcd_print_char (0xdf);
@@ -47,7 +47,7 @@ void wetterdaten_anzeigen ()
   /* Luftdruck */
   lcd_set_cursor (10, 2);
   if (bmp280_id) {
-    int32_to_text_decimal (bmp280_pres, 3);
+    int32_to_text_decimal (bmp280_pres, 2);
     insert_decimal_point10 ();
     lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 5);
     lcd_print_text ("hPa");
@@ -56,7 +56,7 @@ void wetterdaten_anzeigen ()
   /* Luftfeuchte */
   lcd_set_cursor (10, 1);
   if (bmp280_id == BME280_ID_VAL) {
-    int32_to_text_decimal (bmp280_humi, 3);
+    int32_to_text_decimal (bmp280_humi, 2);
     insert_decimal_point10 ();
     lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 5);
     lcd_print_text ("%RH");
