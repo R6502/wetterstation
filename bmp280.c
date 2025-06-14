@@ -11,10 +11,10 @@
 
 #define BMP280_ADDR     0x76    // can be 0x77 or 0x76
 
-#define BMP280_ID_REG           0xD0
+#define BMP280_ID_REG           0xd0
 
 #define BMP280_CAL_REG_FIRST    0x88
-#define BMP280_CAL_REG_LAST     0xA1
+#define BMP280_CAL_REG_LAST     0xa1
 #define BMP280_CAL_DATA_SIZE    (BMP280_CAL_REG_LAST+1 - BMP280_CAL_REG_FIRST)
 
 /* extra BME280 */
@@ -22,14 +22,14 @@
 #define BME280_CAL_HUM_REG_LAST  0xe6
 #define BME280_CAL_HUM_DATA_SIZE (BME280_CAL_HUM_REG_LAST + 1 - BME280_CAL_HUM_REG_FIRST)
 
-#define BMP280_CONTROL_HUMI_REG 0xF2
-#define BMP280_STATUS_REG       0xF3
-#define BMP280_CONTROL_REG      0xF4
-#define BMP280_CONFIG_REG       0xF5
+#define BMP280_CONTROL_HUMI_REG 0xf2
+#define BMP280_STATUS_REG       0xf3
+#define BMP280_CONTROL_REG      0xf4
+#define BMP280_CONFIG_REG       0xf5
 
-#define BMP280_PRES_REG         0xF7
-#define BMP280_TEMP_REG         0xFA
-#define BMP280_HUMI_REG         0xFD
+#define BMP280_PRES_REG         0xf7
+#define BMP280_TEMP_REG         0xfA
+#define BMP280_HUMI_REG         0xfD
 
 /******************************************************************************/
 
@@ -40,8 +40,6 @@ uint8_t  bmp280_id;
 
 /******************************************************************************/
 
-// we create a struct for this, so that we can add support for two
-// sensors on a I2C bus
 static union _bmp280_cal_union {
          uint8_t bytes [BMP280_CAL_DATA_SIZE];
          struct {
@@ -65,16 +63,13 @@ static union _bmp280_cal_union {
        } bmp280_cal;
 
 
-static union _bme280_cal_hum_union {
-         uint8_t bytes [BME280_CAL_HUM_DATA_SIZE];
-         struct {
-           /*! Calibration coefficients for the humidity sensor (9 byte extra) */
-           int16_t dig_h2;
-           uint8_t dig_h3;
-           int16_t dig_h4;
-           int16_t dig_h5;
-           int8_t  dig_h6;
-         } v;
+static struct _bme280_cal_hum_struct {
+         /*! Calibration coefficients for the humidity sensor (9 byte extra) */
+         int16_t dig_h2;
+         uint8_t dig_h3;
+         int16_t dig_h4;
+         int16_t dig_h5;
+         int8_t  dig_h6;
        } bme280_cal_hum;
 
 /******************************************************************************/
@@ -146,39 +141,13 @@ void bmp280_readmem (uint8_t reg, uint8_t buff[], uint8_t bytes)
 } /* bmp280_readmem */
 
 
-void bmp280_set_ctrl_hum (uint8_t osrs_h)
-{
-  bmp280_write_register (BMP280_CONTROL_HUMI_REG, (osrs_h & 0x7));
-} /* bmp280_set_ctrl_hum */
-
-
-void bmp280_set_ctrl (uint8_t osrs_t, uint8_t osrs_p, uint8_t mode)
-{
-  bmp280_write_register (BMP280_CONTROL_REG,
-                      ((osrs_t & 0x7) << 5)
-                    | ((osrs_p & 0x7) << 2)
-                    | (mode & 0x3)
-        );
-} /* bmp280_set_ctrl */
-
-
-void bmp280_set_config (uint8_t t_sb, uint8_t filter, uint8_t spi3w_en)
-{
-  bmp280_write_register (BMP280_CONFIG_REG,
-                            ((t_sb & 0x7) << 5)
-                         | ((filter & 0x7) << 2)
-                         | (spi3w_en & 1)
-        );
-} /* bmp280_set_config */
-
-
 void bmp280_start (void)
 {
-  uint8_t mode = 0;
-
-  mode |= 3; /* normal mode */
-  mode |= 1 << 2; /* osrs_p = 1 -> 16bit */
-  mode |= 1 << 5; /* osrs_r = 1 -> 16bit */
+  //uint8_t mode = 0;
+  //
+  //mode |= 3; /* normal mode */
+  //mode |= 1 << 2; /* osrs_p = 1 -> 16bit */
+  //mode |= 1 << 5; /* osrs_r = 1 -> 16bit */
 
   bmp280_id = bmp280_read_register (BMP280_ID_REG, 1); /* ID @d8 */
 
@@ -187,7 +156,7 @@ void bmp280_start (void)
     return;
   }
 
-  bmp280_write_register (0xf4, mode);
+  //bmp280_write_register (0xf4, mode);
 
   bmp280_readmem (BMP280_CAL_REG_FIRST,
                   bmp280_cal.bytes,
@@ -200,29 +169,40 @@ void bmp280_start (void)
                     bytes,
                     BME280_CAL_HUM_DATA_SIZE);
 
-    bme280_cal_hum.v.dig_h2 = bytes [1]; /* E2 */
-    bme280_cal_hum.v.dig_h2 <<= 8;
-    bme280_cal_hum.v.dig_h2 |= bytes [0]; /* E1 */
+    bme280_cal_hum.dig_h2 = bytes [1]; /* E2 */
+    bme280_cal_hum.dig_h2 <<= 8;
+    bme280_cal_hum.dig_h2 |= bytes [0]; /* E1 */
 
-    bme280_cal_hum.v.dig_h3 = bytes [2]; /* E3 */
+    bme280_cal_hum.dig_h3 = bytes [2]; /* E3 */
 
-    bme280_cal_hum.v.dig_h4 = bytes [3]; /* E4 */
-    bme280_cal_hum.v.dig_h4 <<= 4;
-    bme280_cal_hum.v.dig_h4 |= bytes [4] & 0x0f; /* E5 */
+    bme280_cal_hum.dig_h4 = bytes [3]; /* E4 */
+    bme280_cal_hum.dig_h4 <<= 4;
+    bme280_cal_hum.dig_h4 |= bytes [4] & 0x0f; /* E5 */
 
-    bme280_cal_hum.v.dig_h5 = bytes [5]; /* E6 */
-    bme280_cal_hum.v.dig_h5 <<= 4;
-    bme280_cal_hum.v.dig_h5 |= (bytes [4] >> 4) & 0x0f; /* E5 */
+    bme280_cal_hum.dig_h5 = bytes [5]; /* E6 */
+    bme280_cal_hum.dig_h5 <<= 4;
+    bme280_cal_hum.dig_h5 |= (bytes [4] >> 4) & 0x0f; /* E5 */
 
-    bme280_cal_hum.v.dig_h6 = bytes [5]; /* E7 */
+    bme280_cal_hum.dig_h6 = bytes [5]; /* E7 */
   }
 
   if (bmp280_id == BME280_ID_VAL) {
-    bmp280_set_ctrl_hum (5); /* oversampling * 16 */
+    /* oversampling * 16 */
+    bmp280_write_register (BMP280_CONTROL_HUMI_REG, 5);
   }
 
-  bmp280_set_config (0, 4, 0); // 0.5 ms delay, 16x filter, no 3-wire SPI
-  bmp280_set_ctrl (2, 5, 3); // T oversample x2, P over x2, normal mode
+  /* 0.5 ms delay, 16x filter, no 3-wire SPI */
+  bmp280_write_register (BMP280_CONFIG_REG,
+                            (0 << 5)  /* t_sb     = 0 */
+                         |  (4 << 2)  /* filter   = 4 */
+                         |   0);      /* spi3w_en = 0 */
+
+
+  /* T oversample x2, P over x2, normal mode */
+  bmp280_write_register (BMP280_CONTROL_REG,
+                      (2 << 5)   /* osrs_t = 2 */
+                    | (5 << 2)   /* osrs_p = 5 */
+                    |  3 );      /* mode   = 3 */
 } /* bmp280_start  */
 
 
@@ -233,10 +213,11 @@ void bmp280_read (void)
   uint32_t humi_raw = 0;
   int32_t  var1, var2, t_fine;//, x;
 
+  bmp280_temp = 0;
+  bmp280_pres = 0;
+  bmp280_humi = 0;
+
   if ((bmp280_id != BMP280_ID_VAL) && (bmp280_id != BME280_ID_VAL)) {
-    bmp280_temp = 0;
-    bmp280_pres = 0;
-    bmp280_humi = 0;
     return;
   }
 
@@ -302,22 +283,21 @@ void bmp280_read (void)
     int32_t var3;
     int32_t var4;
     int32_t var5;
-    //uint32_t humidity_max = 102400;
 
     var1 = t_fine - ((int32_t)76800);
     //var2 = (int32_t)(humi_raw * 16384);
-    var3 = (int32_t)(((int32_t)bme280_cal_hum.v.dig_h4) * 1048576);
-    var4 = ((int32_t)bme280_cal_hum.v.dig_h5) * var1;
+    var3 = (int32_t)(((int32_t)bme280_cal_hum.dig_h4) * 1048576);
+    var4 = ((int32_t)bme280_cal_hum.dig_h5) * var1;
 
     //var5 = (((var2 - var3) - var4) + (int32_t)16384) / 32768;
     var5 = ((((humi_raw * 16384) - var3) - var4) + (int32_t)16384) / 32768;
 
-    var2 = (var1 * ((int32_t)bme280_cal_hum.v.dig_h6)) / 1024;
+    var2 = (var1 * ((int32_t)bme280_cal_hum.dig_h6)) / 1024;
 
-    var3 = (var1 * ((int32_t)bme280_cal_hum.v.dig_h3)) / 2048;
+    var3 = (var1 * ((int32_t)bme280_cal_hum.dig_h3)) / 2048;
     var4 = ((var2 * (var3 + (int32_t)32768)) / 1024) + (int32_t)2097152;
 
-    var2 = ((var4 * ((int32_t)bme280_cal_hum.v.dig_h2)) + 8192) / 16384;
+    var2 = ((var4 * ((int32_t)bme280_cal_hum.dig_h2)) + 8192) / 16384;
 
     var3 = var5 * var2;
     var4 = ((var3 / 32768) * (var3 / 32768)) / 128;
@@ -326,12 +306,7 @@ void bmp280_read (void)
     //var5 = (var5 > 419430400 ? 419430400 : var5);
     bmp280_humi = (uint32_t)(var5 / 4096);
 
-    //if (bmp280_humi > humidity_max) {
-    //  bmp280_humi = humidity_max;
-    //}
-
     bmp280_humi *= 10;
-    //bmp280_humi *= 100;
     bmp280_humi /= 1024;
   }
 } /* bmp280_read */
