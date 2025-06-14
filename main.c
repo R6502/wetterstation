@@ -35,11 +35,12 @@ void wetterdaten_anzeigen ()
   bmp280_read ();
 
   /* Temperatur */
-  lcd_set_cursor (0, 1);
+  lcd_set_cursor (11, 1);
   if (bmp280_id) {
     int32_to_text_decimal (bmp280_temp, 2);
     insert_decimal_point10 ();
     lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 4);
+    lcd_print_text (" ");
     lcd_print_char (0xdf);
     lcd_print_char ('C');
   }
@@ -50,16 +51,16 @@ void wetterdaten_anzeigen ()
     int32_to_text_decimal (bmp280_pres, 2);
     insert_decimal_point10 ();
     lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 5);
-    lcd_print_text ("hPa");
+    lcd_print_text (" hPa");
   }
 
   /* Luftfeuchte */
-  lcd_set_cursor (10, 1);
+  lcd_set_cursor (10, 3);
   if (bmp280_id == BME280_ID_VAL) {
     int32_to_text_decimal (bmp280_humi, 2);
     insert_decimal_point10 ();
     lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 5);
-    lcd_print_text ("%RH");
+    lcd_print_text (" %RH");
   }
 } /* wetterdaten anzeigen */
 
@@ -67,7 +68,6 @@ void wetterdaten_anzeigen ()
 /******************************************************************************/
 
 
- // von Marie
 uint8_t tastenabfrage (void)
 {
   uint8_t tasten_neu = 0;
@@ -146,7 +146,17 @@ void
   i2c_init ();
   timebase_init ();
 
+  /* enable interrupts */
+#if defined (__AVR__)
+  /* AVR GCC */
   sei ();
+#else
+  /* Codevision */
+#asm
+  sei
+#endasm
+
+#endif
 
   lcd_init ();
   lcd_backlight_on ();

@@ -23,16 +23,16 @@
 
 void timebase_init (void);
 uint16_t millis (void);
-void mdelay_us (uint16_t dt_us);
 void mdelay_ms (uint16_t dt_ms);
 
 void int32_to_text_decimal (int32_t value, uint8_t minlen);
-// void int16_to_text_decimal (int16_t value, uint8_t minlen);
 void insert_decimal_point10 ();
 
 #if defined(__CODEVISIONAVR__)
-void sei (void);
-void cli (void);
+  /* ... */
+#else
+/*nur AVR GCC */
+void mdelay_us (uint16_t dt_us);
 #endif
 
 void lcd_init (void);

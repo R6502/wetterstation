@@ -8,13 +8,6 @@
 
 /******************************************************************************/
 
-//int16_t         adjust_num,
-//                adjust_den,
-//                adjust_control,
-//                adjust_dir;
-
-/******************************************************************************/
-
 static volatile uint16_t timebase_ticks_ms = 0;
 
 /******************************************************************************/
@@ -29,26 +22,11 @@ interrupt [TIM0_OVF] void timer0_overflow_isr (void)
 #endif
 {
   timebase_ticks_ms ++;
-
-  //if (adjust_control < adjust_den) {
-  //  adjust_control += adjust_num;
-  //}
-  //else {
-  //  adjust_control -= adjust_den;
-  //  timebase_ticks_ms += adjust_dir;
-  //  //uart0_tx ('.');
-  //}
 } /* timer0_overflow_isr */
 
 
 void timebase_init (void)
 {
-  // //adjust_num = 25; // 0.248% auf Arduino/Marie
-  // adjust_num = 31; // 0.31% auf Arduino 2
-  // adjust_den = 10000;
-  // adjust_control = 0;
-  // adjust_dir = 1;
-
   /* 8-bit Timer/Counter0: Zeitbasis für 1ms Tick
      Three Independent Interrupt Sources (TOV0, OCF0A, and OCF0B)
 
@@ -79,6 +57,9 @@ void timebase_init (void)
   //TIMSK0 |= (1 << OCIE0A); /* Timer/Counter0 Output Compare Match A Interrupt Enable */
   TIMSK0 |= (1 << TOIE0); /*  Timer/Counter0 Overflow Interrupt Enable */
 
+
+#if defined (__AVR__)
+/* AVR GCC */
   /* 16-bit Timer/Counter1: Freilaufend für us-Delay, 0.5us Auflösung
 
      To do a 16-bit write, the high byte must be written before the low byte. For a 16-bit read, the low byte must be read
@@ -97,6 +78,7 @@ void timebase_init (void)
 
   TCNT1H = 0;
   TCNT1L = 0;
+#endif
 } /* timebase_init */
 
 
@@ -104,26 +86,16 @@ uint16_t millis (void)
 {
   uint16_t now = 0;
 
-//  cli ();
-
-//#asm
-//  cli /* disable interrupts */
-//#endasm
-
   do {
     now = timebase_ticks_ms;
   } while (now != timebase_ticks_ms);
-
-//  sei ();
-
-//#asm
-//  sei /* enable interrupts */
-//#endasm
 
   return now;
 } /* millis */
 
 
+#if defined (__AVR__)
+/* AVR GCC */
 void mdelay_us (uint16_t dt_us)
 {
   uint16_t t_start = TCNT1L;
@@ -147,6 +119,7 @@ void mdelay_us (uint16_t dt_us)
     }
   }
 } /* mdelay_us */
+#endif
 
 
 void mdelay_ms (uint16_t dt_ms)
@@ -162,30 +135,30 @@ void mdelay_ms (uint16_t dt_ms)
 /******************************************************************************/
 
 // #if defined(__CODEVISIONAVR__)
-#if defined (__AVR__)
-
-/* AVR GCC */
-/* .... */
-
-#else
-
-/* Codevision */
-void sei (void)
-{
-#asm
-  sei /* enable interrupts */
-#endasm
-} /* sei */
-
-
-void cli (void)
-{
-#asm
-  cli /* disable interrupts */
-#endasm
-} /* cli */
-
-#endif
+// #if defined (__AVR__)
+//
+// /* AVR GCC */
+// /* .... */
+//
+// #else
+//
+// /* Codevision */
+// void sei (void)
+// {
+// #asm
+//   sei /* enable interrupts */
+// #endasm
+// } /* sei */
+//
+//
+// void cli (void)
+// {
+// #asm
+//   cli /* disable interrupts */
+// #endasm
+// } /* cli */
+//
+// #endif
 
 
 /******************************************************************************/
