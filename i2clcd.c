@@ -14,11 +14,10 @@
 
 /******************************************************************************/
 
+#define LCD_I2C_ADDR        0x27
+
 /* Langsamer, aber weniger Code */
 #define OPT_I2C_SINGLE_BYTE_ACCESS
-
-/* I2C ist so langsam, dass wir uns die kurzen Delays sapren können*/
-// #define OPT_LCD_SHORT_DELAYS
 
 /******************************************************************************/
 
@@ -67,15 +66,8 @@
 #define LCD_CONTROL_RW          0x02   // Read/Write bit
 #define LCD_CONTROL_RS          0x01   // Register select bit
 
-#define LCD_INIT_COMMAND_1        ((LCD_FUNCTIONSET) | (LCD_8BITMODE))
-#define LCD_INIT_COMMAND_2        ((LCD_FUNCTIONSET) | (LCD_4BITMODE))
-
-/******************************************************************************/
-
-uint8_t lcd_numlines = 0;
-uint8_t lcd_backlightval = 0;
-uint8_t lcd_address = 0;
-uint8_t lcd_displaycontrol = 0;
+#define LCD_INIT_COMMAND_1      ((LCD_FUNCTIONSET) | (LCD_8BITMODE))
+#define LCD_INIT_COMMAND_2      ((LCD_FUNCTIONSET) | (LCD_4BITMODE))
 
 /******************************************************************************/
 
@@ -100,18 +92,13 @@ uint8_t lcd_displaycontrol = 0;
 
 void lcd_init (void)
 {
-  lcd_displaycontrol  = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;
-  lcd_numlines        = 4;
-  lcd_address         = 0x27;
-  lcd_backlightval    = LCD_NOBACKLIGHT;
-
   /* SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
      according to datasheet, we need at least 40ms after power rises above 2.7V
      before sending commands. Arduino can turn on way befer 4.5V so we'll wait 50 */
   mdelay_ms (50);
 
   /* Now we pull both RS and R/W low to begin commands */
-  lcd_expander_write (lcd_backlightval);  // reset expanderand turn backlight off (Bit 8 =1)
+  lcd_expander_write (LCD_BACKLIGHT);  // reset expanderand turn backlight off (Bit 8 =1)
   mdelay_ms (1000);
 
   /* put the LCD into 4 bit mode this is according to the hitachi HD44780 datasheet figure 24, pg 46 */
@@ -132,11 +119,11 @@ void lcd_init (void)
   /* finally, set to 4-bit interface */
   lcd_write_4bit (LCD_INIT_COMMAND_2);
 
-  // set # lines, font size, etc.
+  /* set # lines, font size, etc. */
   lcd_command (LCD_FUNCTIONSET | LCD_4BITMODE | LCD_5x8DOTS | LCD_2LINE);
 
   /* turn the display on with no cursor or blinking default */
-  lcd_display_on ();
+  lcd_command (LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
 
   /* clear it off  */
   lcd_clear ();
@@ -165,45 +152,13 @@ void lcd_home (void)
 void lcd_set_cursor (uint8_t col, uint8_t row)
 {
   static uint8_t row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-  if (row >= lcd_numlines ) {
-    row = lcd_numlines - 1;    // we count rows starting w/0
-  }
   lcd_command (LCD_SETDDRAMADDR | (col + row_offsets [row]));
 } /* lcd_set_cursor */
 
 
-void lcd_display_off (void)
-{
-  lcd_displaycontrol &= ~LCD_DISPLAYON;
-  lcd_command (LCD_DISPLAYCONTROL | lcd_displaycontrol);
-} /* lcd_display_off */
-
-
-void lcd_display_on (void)
-{
-  lcd_displaycontrol |= LCD_DISPLAYON;
-  lcd_command (LCD_DISPLAYCONTROL | lcd_displaycontrol);
-} /* lcd_display_on */
-
-
-void lcd_backlight_off (void)
-{
-  lcd_backlightval = LCD_NOBACKLIGHT;
-  lcd_expander_write (0);
-} /* lcd_backlight_off */
-
-
-void lcd_backlight_on (void)
-{
-  lcd_backlightval = LCD_BACKLIGHT;
-  lcd_expander_write (0);
-} /* lcd_backlight_on */
-
-
 void lcd_command (uint8_t cmd)
 {
-  uint8_t mode = 0;
-  lcd_write_8bit (cmd, mode);
+  lcd_write_8bit (cmd, 0);
 } /* lcd_command */
 
 
@@ -222,31 +177,23 @@ void lcd_write_8bit (uint8_t value, uint8_t mode)
   high_nibble |= mode;
   low_nibble  |= mode;
 
-  high_nibble |= lcd_backlightval;
-  low_nibble  |= lcd_backlightval;
+  high_nibble |= LCD_BACKLIGHT;
+  low_nibble  |= LCD_BACKLIGHT;
 
   i2c_start ();
-  i2c_write (lcd_address << 1);
+  i2c_write (LCD_I2C_ADDR << 1);
 
   i2c_write (high_nibble);
   i2c_write (high_nibble | LCD_CONTROL_EN);
-
-  mdelay_us (1); // enable pulse must be >450ns
 
   i2c_write (high_nibble);
 
   i2c_write (low_nibble);
   i2c_write (low_nibble | LCD_CONTROL_EN);
 
-  mdelay_us (1); // enable pulse must be >450ns
-
   i2c_write (low_nibble);
 
   i2c_stop ();
-
-#  if defined (OPT_LCD_SHORT_DELAYS)
-  mdelay_us (50); // commands need > 37us to settle
-#  endif
 
 #endif
 } /* lcd_write_8bit */
@@ -260,49 +207,36 @@ void lcd_write_4bit (uint8_t data)
 
   lcd_expander_write (data | LCD_CONTROL_EN);     // En high
 
-#  if defined (OPT_LCD_SHORT_DELAYS)
-  mdelay_us (1); // enable pulse must be >450ns
-#  endif
-
   lcd_expander_write (data & ~LCD_CONTROL_EN); // En low
 
 #else
 
   i2c_start ();
-  i2c_write (lcd_address << 1);
+  i2c_write (LCD_I2C_ADDR << 1);
 
   i2c_write (data);
   i2c_write (data | LCD_CONTROL_EN);
-
-#  if defined (OPT_LCD_SHORT_DELAYS)
-  mdelay_us (1); // enable pulse must be >450ns
-#  endif
 
   i2c_write (data);
 
   i2c_stop ();
 
 #endif
-
-#  if defined (OPT_LCD_SHORT_DELAYS)
-  mdelay_us (50); // commands need > 37us to settle
-#  endif
-} /*lcd_write_4bit  */
+} /* lcd_write_4bit */
 
 
 void lcd_expander_write (uint8_t data)
 {
   i2c_start ();
-  i2c_write (lcd_address << 1);
-  i2c_write (data | lcd_backlightval);
+  i2c_write (LCD_I2C_ADDR << 1);
+  i2c_write (data | LCD_BACKLIGHT);
   i2c_stop ();
 } /* lcd_expander_write */
 
 
 void lcd_print_char (uint8_t ch)
 {
-  uint8_t mode = LCD_CONTROL_RS;
-  lcd_write_8bit (ch, mode);
+  lcd_write_8bit (ch, LCD_CONTROL_RS);
 } /* lcd_print_char */
 
 

@@ -36,10 +36,10 @@ void lcd_init (void);
 void lcd_clear (void);
 void lcd_home (void);
 void lcd_set_cursor (uint8_t col, uint8_t row);
-void lcd_display_off (void);
-void lcd_display_on (void);
-void lcd_backlight_off (void);
-void lcd_backlight_on (void);
+//void lcd_display_off (void);
+//void lcd_display_on (void);
+//void lcd_backlight_off (void);
+//void lcd_backlight_on (void);
 void lcd_command (uint8_t cmd);
 void lcd_write_8bit (uint8_t value, uint8_t mode);
 void lcd_write_4bit (uint8_t data);
@@ -94,10 +94,10 @@ extern uint8_t  bmp280_id;
 #define KEYCODE_BACK    (0x0b)
 #define KEYCODE_OK      (0x0c)
 
-#define KEYCODE_F1      (0x0e)
-#define KEYCODE_F2      (0x0d)
-#define KEYCODE_F3      (0x0f)
-#define KEYCODE_F4      (0x10)
+#define KEYCODE_F4      (0x0d)
+#define KEYCODE_F3      (0x0e)
+#define KEYCODE_F1      (0x0f)
+#define KEYCODE_F2      (0x10)
 
 uint8_t keypad_read (void);
 

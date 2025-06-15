@@ -257,24 +257,23 @@ void bmp280_read (void)
           + ((((int32_t)bmp280_cal.v.dig_p2) * var1) >> 1)) >> 18;
   var1 = ((((32768 + var1)) * ((int32_t)bmp280_cal.v.dig_p1)) >> 15);
 
-  if (var1 == 0) {
-    bmp280_pres = 0;
-  }
-  else {
+  if (var1 != 0) {
     //bmp280_pres = (((uint32_t)(((int32_t)1048576) - pres_raw) - (var2 >> 12))) * 626;
     //bmp280_pres /= (uint32_t)var1;
 
-    bmp280_pres = (((uint32_t)(((int32_t)1048576)-pres_raw) - (var2 >> 12))) * 3125;
+    //bmp280_pres = (((uint32_t)(((int32_t)1048576) - pres_raw) - (var2 >> 12))) * 3125;
+    bmp280_pres = (((uint32_t)(((int32_t)1048576) - pres_raw) - (var2 >> 12))) * 625;
     //if (bmp280_pres < 0x80000000) {
     //  bmp280_pres = (bmp280_pres << 1) / ((uint32_t)var1);
     //}
     //else {
-      bmp280_pres = (bmp280_pres / (uint32_t)var1) * 2;
+      //bmp280_pres = (bmp280_pres / (uint32_t)var1) * 2;
+      bmp280_pres = (bmp280_pres / (uint32_t)var1);
     //}
-    var1 = (((int32_t)bmp280_cal.v.dig_p9) * ((int32_t)(((bmp280_pres>>3) * (bmp280_pres >> 3)) >> 13))) >> 12;
-    var2 = (((int32_t)(bmp280_pres >> 2)) * ((int32_t)bmp280_cal.v.dig_p8)) >> 13;
-    bmp280_pres = (uint32_t)((int32_t)bmp280_pres + ((var1 + var2 + bmp280_cal.v.dig_p7) >> 4));
-    bmp280_pres /= 10;
+    //var1 = (((int32_t)bmp280_cal.v.dig_p9) * ((int32_t)(((bmp280_pres>>3) * (bmp280_pres >> 3)) >> 13))) >> 12;
+    //var2 = (((int32_t)(bmp280_pres >> 2)) * ((int32_t)bmp280_cal.v.dig_p8)) >> 13;
+    //bmp280_pres = (uint32_t)((int32_t)bmp280_pres + ((var1 + var2 + bmp280_cal.v.dig_p7) >> 4));
+    //bmp280_pres /= 10;
   }
 
   if (bmp280_id == BME280_ID_VAL) {
@@ -300,14 +299,15 @@ void bmp280_read (void)
     var2 = ((var4 * ((int32_t)bme280_cal_hum.dig_h2)) + 8192) / 16384;
 
     var3 = var5 * var2;
-    var4 = ((var3 / 32768) * (var3 / 32768)) / 128;
-    var5 = var3 - ((var4 * ((int32_t)bmp280_cal.v.dig_h1)) / 16);
+    //var4 = ((var3 / 32768) * (var3 / 32768)) / 128;
+    var5 = var3; // - ((var4 * ((int32_t)bmp280_cal.v.dig_h1)) / 16);
     //var5 = (var5 < 0 ? 0 : var5);
     //var5 = (var5 > 419430400 ? 419430400 : var5);
-    bmp280_humi = (uint32_t)(var5 / 4096);
+    bmp280_humi = (uint32_t)(var5 / 419439ul);
 
-    bmp280_humi *= 10;
-    bmp280_humi /= 1024;
+    //bmp280_humi = (uint32_t)(var5 / 4096);
+    //bmp280_humi *= 10;
+    //bmp280_humi /= 1024;
   }
 } /* bmp280_read */
 
