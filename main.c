@@ -12,20 +12,18 @@
 uint16_t time_1000ms_prev = 0;
 uint16_t time_100ms_prev = 0;
 
-uint8_t tasten_feld = 0;
-uint8_t tasten_feld_prev = 0;
-
 uint8_t zeit_sekunden_bcd = 0;
 uint8_t zeit_minuten_bcd = 0;
 uint8_t zeit_stunden_bcd = 0;
 
-/******************************************************************************/
+uint8_t settime_minuten_bcd = 0;
+uint8_t settime_stunden_bcd = 0;
 
-#define TASTE_NIX               (0)
-#define TASTE_SEK               (1)
-#define TASTE_MIN               (2)
-#define TASTE_H                 (3)
-#define TASTE_STORE_RTC         (4)
+#define MENU_NORMAL     (0)
+#define MENU_SETTIME    (1)
+uint8_t menu_shown = MENU_NORMAL;
+uint8_t menu_mode = MENU_NORMAL;
+uint8_t menu_anzeigen = 0;
 
 /******************************************************************************/
 
@@ -66,34 +64,12 @@ void wetterdaten_anzeigen ()
 
 
 /******************************************************************************/
-
-
-uint8_t tastenabfrage (void)
-{
-  uint8_t tasten_neu = 0;
-  uint8_t taste = TASTE_NIX;
-
-  tasten_feld = ~PINK;
-
-  tasten_neu = tasten_feld_prev ^ tasten_feld;
-  tasten_neu &= tasten_feld;
-
-  if      (tasten_neu & (1 << 4)) taste = TASTE_SEK;
-  else if (tasten_neu & (1 << 5)) taste = TASTE_MIN;
-  else if (tasten_neu & (1 << 6)) taste = TASTE_H;
-  else if (tasten_neu & (1 << 7)) taste = TASTE_STORE_RTC;
-
-  tasten_feld_prev = tasten_feld;
-  return taste;
-}
+/* Zeitfunktion & Sekunden hochzählen */
 
 
 uint8_t bcd_plus_eins (uint8_t x, uint8_t limit)
 {
-  //uint8_t einer = 0;
-
   x += 1;
-  //einer = x & 0x0f;
   if ((x & 0xf) >= 0x0a) { // BCD Überlauf
     x += 0x06;
   }
@@ -115,16 +91,6 @@ uint8_t zeit_weiter_eine_sekunde (void)
   return 0;
 } /* zeit_weiter_eine_sekunde */
 
-int menu (void)
-{
-  lcd_set_cursor (0, 3);
-  lcd_print_text ("History #1 Uhr #2");
-}
-
-
- /*****************************************************************************************************/
- // Zeitfunktion & Sekunden hochzählen
-
 
 void zaehler_anzeigen (uint8_t zaehler_wert)
 {
@@ -136,7 +102,33 @@ void zaehler_anzeigen (uint8_t zaehler_wert)
 } /* zaehler_anzeigen */
 
 
- /*****************************************************************************************************/
+/*****************************************************************************************************/
+
+
+void menu (void)
+{
+  if ((menu_shown == menu_mode) && (menu_anzeigen ==0)) return;
+
+  lcd_set_cursor (0, 3);
+
+  if (menu_mode == MENU_NORMAL) {
+    //lcd_print_text ("F1: PREV F2: NEXT  ");
+    lcd_print_text ("HIST F1: + F2: -   ");
+  }
+  else if (menu_mode == MENU_SETTIME) {
+    lcd_print_text ("TIME: ");
+    zaehler_anzeigen (settime_stunden_bcd);
+    lcd_print_char (':');
+    zaehler_anzeigen (settime_minuten_bcd);
+    lcd_print_text (" #OK    ");
+  }
+
+  menu_shown = menu_mode;
+  menu_anzeigen = 0;
+} /* menu */
+
+
+/*****************************************************************************************************/
 
 
 #if defined (__AVR__)
@@ -148,7 +140,7 @@ void
 #endif
  main (void)
 {
-  // einmalig ausführen
+  /* einmalig ausführen */
   i2c_init ();
   timebase_init ();
 
@@ -171,55 +163,54 @@ void
 
   rtc_read ();
 
+  menu_anzeigen = 1;
+  menu ();
+
   time_1000ms_prev = millis ();
 
   while (1) {                  // Endlosschleife
-    uint8_t  taste = 0;       // Tastencode
     uint8_t  zeit_anzeigen = 0;
     uint16_t time_ms = 0;
 
-    taste = tastenabfrage ();
-
-    menu ();
-
-    //if (taste == TASTE_BACKLIGHT_OFF) {
-    //  lcd_backlight_off ();
-    //}
-    //
-    //else if (taste == TASTE_BACKLIGHT_ON) {
-    //  lcd_backlight_on ();
-    //}
-
-    //else if (taste == TASTE_YAY_ON) {
-    //  lcd_set_cursor (1, 3);
-    //  lcd_print_text ("Yay");
-    //}
-
-    //else if (taste == TASTE_YAY_OFF) {
-    //  lcd_set_cursor (1, 3);
-    //  lcd_print_text ("   ");
-    //}
-
-    if (taste == TASTE_SEK) {
-      zeit_sekunden_bcd = 0x00;
-      zeit_anzeigen = 1;
-    }
-
-    else if (taste == TASTE_MIN) {
-      zeit_minuten_bcd = bcd_plus_eins (zeit_minuten_bcd, 0x60);
-      zeit_anzeigen = 1;
-    }
-
-    else if (taste == TASTE_H) {
-      zeit_stunden_bcd = bcd_plus_eins (zeit_stunden_bcd, 0x24);
-      zeit_anzeigen = 1;
-    }
-
-    else if (taste == TASTE_STORE_RTC) {
-      rtc_write ();
-    }
-
     time_ms = millis ();
+
+    if ((time_ms - time_100ms_prev) >= 100) { // alle 100ms ausführen
+      uint8_t  taste = 0;
+
+      taste = keypad_read ();
+
+      if (taste != KEYCODE_NONE) {
+        if (taste == KEYCODE_0) taste = 0;
+
+        if (taste < 10) {
+          settime_stunden_bcd <<= 4;
+          settime_stunden_bcd |= settime_minuten_bcd >> 4;
+          settime_minuten_bcd <<= 4;
+          settime_minuten_bcd |= taste;
+          menu_mode = MENU_SETTIME;
+          menu_anzeigen = 1;
+        }
+        else if (menu_mode == MENU_SETTIME) {
+          if (taste == KEYCODE_OK) {
+            if ((settime_minuten_bcd < 0x60) && (settime_stunden_bcd < 0x24)) {
+              zeit_sekunden_bcd = 0x00;
+              zeit_minuten_bcd  = settime_minuten_bcd;
+              zeit_stunden_bcd  = settime_stunden_bcd;
+              zeit_anzeigen = 1;
+              rtc_write ();
+            }
+          }
+
+          settime_stunden_bcd = 0;
+          settime_minuten_bcd = 0;
+          menu_mode = MENU_NORMAL;
+        }
+
+        time_100ms_prev = time_ms;
+      }
+
+      menu ();
+    }
 
     if ((time_ms - time_1000ms_prev) >= 1000) { // alle Sekunde ausführen
       zeit_weiter_eine_sekunde ();
@@ -239,6 +230,11 @@ void
       zeit_anzeigen = 0;
     }
   }
+
+#if defined (__AVR__)
+/* AVR GCC */
+  return 0;
+#endif
 } /* main */
 
 

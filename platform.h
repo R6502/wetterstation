@@ -81,6 +81,27 @@ extern uint8_t  bmp280_id;
 
 /******************************************************************************/
 
+#define KEYCODE_NONE    (0x00)
+
+#define KEYCODE_1       (0x01)
+#define KEYCODE_2       (0x02)
+#define KEYCODE_3       (0x03)
+#define KEYCODE_4       (0x04)
+#define KEYCODE_5       (0x05)
+#define KEYCODE_6       (0x06)
+#define KEYCODE_7       (0x07)
+#define KEYCODE_8       (0x08)
+#define KEYCODE_9       (0x09)
+#define KEYCODE_0       (0x0a)
+
+#define KEYCODE_BACK    (0x0b)
+#define KEYCODE_OK      (0x0c)
+
+#define KEYCODE_F1      (0x0e)
+#define KEYCODE_F2      (0x0d)
+#define KEYCODE_F3      (0x0f)
+#define KEYCODE_F4      (0x10)
+
 uint8_t keypad_read (void);
 
 /******************************************************************************/
