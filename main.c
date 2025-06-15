@@ -27,37 +27,76 @@ uint8_t menu_anzeigen = 0;
 
 /******************************************************************************/
 
+#define MAX_TEXT_BUFFER 16
+#define TEXT_BUFFER_RIGHT 6
+
+char text_buffer [MAX_TEXT_BUFFER];
+
+/******************************************************************************/
+
+
+void lcd_print_decimal10 (int32_t value)
+{
+  uint8_t insert_decimal_point = 1;
+  uint8_t wp = TEXT_BUFFER_RIGHT;
+  uint8_t neg = 0;
+
+  if (value < 0) {
+    neg = 1;
+    value = -value;
+  }
+
+  text_buffer [wp] = 0;
+
+  while (wp) {
+    text_buffer [--wp] = '0' + value % 10;
+    value /= 10;
+    if (insert_decimal_point) {
+      text_buffer [--wp] = '.';
+      insert_decimal_point = 0;
+    }
+    else if (value == 0) {
+      break;
+    }
+  }
+
+  if (neg && wp) text_buffer [--wp] = '-';
+
+  while (wp != 0) {
+    text_buffer [--wp] = ' ';
+  }
+
+  lcd_print_text (text_buffer);
+} /* lcd_print_decimal10 */
+
+
+/******************************************************************************/
+
 
 void wetterdaten_anzeigen ()
 {
   bmp280_read ();
 
   /* Temperatur */
-  lcd_set_cursor (11, 1);
+  lcd_set_cursor (10, 1);
   if (bmp280_id) {
-    int32_to_text_decimal (bmp280_temp, 2);
-    insert_decimal_point10 ();
-    lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 4);
-    lcd_print_text (" ");
-    lcd_print_char (0xdf);
-    lcd_print_char ('C');
+    lcd_print_decimal10 (bmp280_temp);
+    lcd_print_text (" \337C");
+    //lcd_print_char (0xdf);
+    //lcd_print_char ('C');
   }
 
   /* Luftdruck */
   lcd_set_cursor (10, 2);
   if (bmp280_id) {
-    int32_to_text_decimal (bmp280_pres, 2);
-    insert_decimal_point10 ();
-    lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 5);
+    lcd_print_decimal10 (bmp280_pres);
     lcd_print_text (" hPa");
   }
 
   /* Luftfeuchte */
   lcd_set_cursor (0, 1);
   if (bmp280_id == BME280_ID_VAL) {
-    int32_to_text_decimal (bmp280_humi, 2);
-    insert_decimal_point10 ();
-    lcd_print_text (text_buffer + TEXT_BUFFER_RIGHT - 5);
+    lcd_print_decimal10 (bmp280_humi);
     lcd_print_text (" %RH");
   }
 } /* wetterdaten anzeigen */

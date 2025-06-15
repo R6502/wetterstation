@@ -127,7 +127,7 @@ void lcd_init (void)
   /* third go! */
   lcd_write_4bit (LCD_INIT_COMMAND_1);
 
-  mdelay_us (150);
+  mdelay_ms (1);
 
   /* finally, set to 4-bit interface */
   lcd_write_4bit (LCD_INIT_COMMAND_2);

@@ -68,9 +68,6 @@
     <Compile Include="rtc.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="textfunc.c">
-      <SubType>compile</SubType>
-    </Compile>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\vs\\CV.targets" />
 </Project>

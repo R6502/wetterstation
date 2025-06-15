@@ -1,6 +1,6 @@
 [Project]
 Toolset=AVR
-Files=7
+Files=6
 Top1=1
 Left1=1
 Height1=400
@@ -15,8 +15,8 @@ Height0=397
 Width0=652
 Active0=0
 State0=1
-OpenedFiles=0
-OF1=platform.c
+OpenedFiles=1
+OF1=main.c
 Top2=-23
 Left2=-4
 Height2=562
@@ -31,9 +31,9 @@ OutputListFilesDirectory=Release\List
 OutputObjectFilesDirectory=Release
 OutputExecutableFilesDirectory=Release\Exe
 OutputLinkerFilesDirectory=Release\Link
-AllowDisplayFunctionCallTree=1
+AllowDisplayFunctionCallTree=0
 Column1=0
-TimeStamp1=1515144549
+TimeStamp1=1523540058
 OF1_Bookmark0=-1
 OF1_Bookmark1=-1
 OF1_Bookmark2=-1
@@ -57,9 +57,9 @@ DebugOutputListFilesDirectory=Debug\List
 DebugOutputObjectFilesDirectory=Debug
 DebugOutputExecutableFilesDirectory=Debug\Exe
 DebugOutputLinkerFilesDirectory=Debug\Link
-ActiveTab=0
-OF2=i2clcd.c
-TimeStamp2=1516337573
+ActiveTab=1
+OF2=main.c
+TimeStamp2=1520668169
 OF3=bmp280.c
 TimeStamp3=1515097961
 OF4=main.c
@@ -80,7 +80,6 @@ F3=platform.c
 F4=bmp280.c
 F5=keypad.c
 F6=rtc.c
-F7=textfunc.c
 
 [Compiler]
 Chip=ATmega2560
@@ -106,7 +105,7 @@ CharIsUnsigned=1
 8BitEnums=1
 EnhancedCoreInstructions=1
 PgmMemSize=262144
-Build=197
+Build=288
 UseEEPROMLocation0=0
 HeapSize=0
 ExternalInterruptVectors=0
@@ -254,7 +253,7 @@ WarningExternalDeclaredNeverDefined=1
 WarningUnknownPragma=1
 WarningStaticRamEepromStorageAllocConstStrLit=0
 WatchAVR8LAutoVariables=0
-COFFileTimeStamp=1520599353
+COFFileTimeStamp=1523541348
 IncludePath32=
 IncludePath33=
 IncludePath34=
@@ -331,7 +330,7 @@ UseBootAppXmega=0
 UseUDSC_LGT8F=0
 IncludePath64=
 LibraryPath64=
-GlobalVarAddr=1122
+GlobalVarAddr=1154
 EEPROMVarAddr=1
 
 [Assembler]
@@ -430,11 +429,11 @@ Row=0
 Column=12
 ScrollPosX=0
 ScrollPosY=0
-TimeStamp=1520599539
+TimeStamp=1523540073
 [CompilerDebug]
 RebuildAll=1
 LinkageInformationPresent=0
-Build=197
+Build=288
 UseEEPROMLocation0=0
 Chip=ATmega2560
 CPUClock=16000000
@@ -623,10 +622,10 @@ L13=Enhanced function parameters passing: Mode 1
 L14=Automatic register allocation: Yes
 L15=Smart register allocation: Yes
 L16=
-L17=Build: 197
-L18=2664 line(s) compiled
+L17=Build: 288
+L18=20804 line(s) compiled
 L19=No errors
-L20=11 warning(s)
+L20=No warnings
 L21=
 L22=Bit variables size: 0 byte(s)
 L23=
@@ -634,32 +633,42 @@ L24=Data Stack area: 0x200 to 0x3FF
 L25=Data Stack size: 512 byte(s)
 L26=Estimated Data Stack usage: 61 byte(s)
 L27=
-L28=RAM Global variables area: 0x400 to 0x461
-L29=RAM Global variables size: 98 byte(s)
+L28=RAM Global variables area: 0x400 to 0x481
+L29=RAM Global variables size: 130 byte(s)
 L30=
-L31=Hardware Stack area: 0x462 to 0x21FF
-L32=Hardware Stack size: 7582 byte(s)
+L31=Hardware Stack area: 0x482 to 0x21FF
+L32=Hardware Stack size: 7550 byte(s)
 L33=
 L34=Heap size: 0 byte(s)
 L35=
 Lines=38
 L36=EEPROM usage: 0 byte(s), 0,0% of EEPROM
-L37=Program size: 2256 words (4512 bytes), 1,7% of FLASH
-L38=339 words (678 bytes), 13,1% reduced by Code Compression
+L37=Program size: 2242 words (4484 bytes), 1,7% of FLASH
+L38=350 words (700 bytes), 13,5% reduced by Code Compression
 [BuildInfoAssembler]
 Lines=12
 L1=AVRASM: AVR macro assembler 2.1.30 (build 592 Nov  7 2008 12:38:17)
 L2=Copyright (C) 1995-2008 ATMEL Corporation
 L3=
-L4=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(4960): No EEPROM data, deleting C:\Users\marie\git\wetterstation\Release\Exe\wetterstation.eep
+L4=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(4723): No EEPROM data, deleting C:\Users\marie\git\wetterstation\Release\Exe\wetterstation.eep
 L5=
 L6=ATmega2560 memory use summary [bytes]:
 L7=Segment   Begin    End      Code   Data   Used    Size   Use%
 L8=---------------------------------------------------------------
-L9=[.cseg] 0x000000 0x0011a0   4432     80   4512  262144   1.7%
-L10=[.dseg] 0x000200 0x000462      0     98     98    8192   1.2%
+L9=[.cseg] 0x000000 0x001184   4356    128   4484  262144   1.7%
+L10=[.dseg] 0x000200 0x000482      0    130    130    8192   1.6%
 L11=[.eseg] 0x000000 0x000001      0      0      0    4096   0.0%
 L12=
+L13=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1436): warning: Register r10 already defined by the .DEF directive
+L14=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1518): warning: .cseg .db misalignment - padding zero byte
+L15=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1525): warning: .cseg .db misalignment - padding zero byte
+L16=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1984): error: Relative branch out of reach
+L17=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1989): error: Relative branch out of reach
+L18=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1995): error: Relative branch out of reach
+L19=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(1997): error: Relative branch out of reach
+L20=C:\Users\marie\git\wetterstation\Release\List\wetterstation.asm(5285): No EEPROM data, deleting C:\Users\marie\git\wetterstation\Release\Exe\wetterstation.eep
+L21=
+L22=Assembly failed, 4 errors, 12 warnings
 [Bookmarks2]
 TimeStamp=982416323
 Row=0
@@ -762,11 +771,11 @@ BK9=-1
 [FoldedCode1]
 Blocks=0
 [Bookmarks6]
-TimeStamp=1520592550
+TimeStamp=1523541016
 Row=0
 Column=0
 ScrollPosX=0
-ScrollPosY=58
+ScrollPosY=0
 BK0=-1
 BK1=-1
 BK2=-1
@@ -830,11 +839,11 @@ BK7=-1
 BK8=-1
 BK9=-1
 [Bookmarks10]
-TimeStamp=1516338044
-Row=39
-Column=0
+TimeStamp=1520663297
+Row=85
+Column=30
 ScrollPosX=0
-ScrollPosY=7
+ScrollPosY=5
 BK0=-1
 BK1=-1
 BK2=-1
@@ -1141,8 +1150,6 @@ BK8=-1
 BK9=-1
 [FoldedCode26]
 Blocks=0
-[FoldedCode10]
-Blocks=0
 [FoldedCode17]
 Blocks=0
 [FoldedCode9]
@@ -1175,8 +1182,6 @@ BK9=-1
 Blocks=0
 [FoldedCode25]
 Blocks=0
-[FoldedCode6]
-Blocks=0
 [Bookmarks29]
 TimeStamp=1520592714
 Row=67
@@ -1195,15 +1200,18 @@ BK8=-1
 BK9=-1
 [FoldedCode29]
 Blocks=0
+[FoldedCode10]
+Blocks=0
+[FoldedCode6]
+Blocks=0
 [HeadersList]
-Files=7
+Files=6
 F1=C:\Users\marie\git\wetterstation\i2clcd.c
 F2=C:\Users\marie\git\wetterstation\main.c
 F3=C:\Users\marie\git\wetterstation\platform.c
 F4=C:\Users\marie\git\wetterstation\bmp280.c
 F5=C:\Users\marie\git\wetterstation\keypad.c
 F6=C:\Users\marie\git\wetterstation\rtc.c
-F7=C:\Users\marie\git\wetterstation\textfunc.c
 [Header1]
 Files=6
 F1=C:\cvavreval\inc\stdint.h
@@ -1216,11 +1224,11 @@ F6=C:\cvavreval\inc\i2c.h
 Files=7
 F1=C:\cvavreval\inc\stdint.h
 F2=C:\cvavreval\inc\string.h
-F3=C:\cvavreval\inc\io.h
-F4=C:\cvavreval\inc\mega2560.h
-F5=C:\cvavreval\inc\mega2560_bits.h
-F6=C:\cvavreval\inc\i2c.h
-F7=platform.h
+F3=platform.h
+F4=C:\cvavreval\inc\io.h
+F5=C:\cvavreval\inc\mega2560.h
+F6=C:\cvavreval\inc\mega2560_bits.h
+F7=C:\cvavreval\inc\i2c.h
 [Header3]
 Files=6
 F1=C:\cvavreval\inc\stdint.h
@@ -1248,15 +1256,6 @@ F5=C:\cvavreval\inc\mega2560.h
 F6=C:\cvavreval\inc\mega2560_bits.h
 F7=C:\cvavreval\inc\i2c.h
 [Header6]
-Files=7
-F1=C:\cvavreval\inc\stdint.h
-F2=C:\cvavreval\inc\string.h
-F3=platform.h
-F4=C:\cvavreval\inc\io.h
-F5=C:\cvavreval\inc\mega2560.h
-F6=C:\cvavreval\inc\mega2560_bits.h
-F7=C:\cvavreval\inc\i2c.h
-[Header7]
 Files=7
 F1=C:\cvavreval\inc\stdint.h
 F2=C:\cvavreval\inc\string.h

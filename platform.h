@@ -25,9 +25,6 @@ void timebase_init (void);
 uint16_t millis (void);
 void mdelay_ms (uint16_t dt_ms);
 
-void int32_to_text_decimal (int32_t value, uint8_t minlen);
-void insert_decimal_point10 ();
-
 #if defined(__CODEVISIONAVR__)
   /* ... */
 #else
@@ -112,12 +109,6 @@ extern uint8_t zeit_stunden_bcd;
 
 void rtc_read (void);
 void rtc_write (void);
-
-/******************************************************************************/
-
-#define MAX_TEXT_BUFFER 16
-#define TEXT_BUFFER_RIGHT 10
-extern char text_buffer [MAX_TEXT_BUFFER];
 
 /******************************************************************************/
 
