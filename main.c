@@ -55,7 +55,7 @@ void wetterdaten_anzeigen ()
   }
 
   /* Luftfeuchte */
-  lcd_set_cursor (10, 3);
+  lcd_set_cursor (0, 1);
   if (bmp280_id == BME280_ID_VAL) {
     int32_to_text_decimal (bmp280_humi, 2);
     insert_decimal_point10 ();
@@ -115,6 +115,12 @@ uint8_t zeit_weiter_eine_sekunde (void)
   return 0;
 } /* zeit_weiter_eine_sekunde */
 
+int menu (void)
+{
+  lcd_set_cursor (0, 3);
+  lcd_print_text ("History #1 Uhr #2");
+}
+
 
  /*****************************************************************************************************/
  // Zeitfunktion & Sekunden hochzählen
@@ -173,6 +179,8 @@ void
     uint16_t time_ms = 0;
 
     taste = tastenabfrage ();
+
+    menu ();
 
     //if (taste == TASTE_BACKLIGHT_OFF) {
     //  lcd_backlight_off ();
