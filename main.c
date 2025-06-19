@@ -55,7 +55,7 @@ typedef struct history_s {
 #define HISTORY_MASK    0xf
 #define HISTORY_MAX     9
 
-#define HISTORY_VERSION 2
+#define HISTORY_VERSION 1
 
 HISTORY history [HISTORY_SIZE];
 
@@ -303,7 +303,6 @@ void
 #endif
 
   lcd_init ();
-  //lcd_backlight_on ();
 
   bmp280_start ();
 
@@ -311,7 +310,6 @@ void
 
   /* Load history */
   { uint8_t index;
-    //uint8_t seq = 0;
 
     for (index = 0; index < HISTORY_MASK; ++index) {
       uint16_t addr = (uint16_t) index * EEPROM_RECORD_SIZE;
@@ -374,11 +372,12 @@ void
           settime_stunden_bcd = 0;
           settime_minuten_bcd = 0;
           menu_mode = MENU_NORMAL;
+          lcd_clear ();
         }
-        else if (taste == KEYCODE_F4) {
-          hist_store ();
-          menu_anzeigen = 1;
-        }
+        //else if (taste == KEYCODE_F4) {
+        //  hist_store ();
+        //  menu_anzeigen = 1;
+        //}
         else if (taste == KEYCODE_F1) {
           if (hist_show > 0) hist_show--;
           if (hist_show == 0) menu_anzeigen = 1;
@@ -401,6 +400,11 @@ void
       time_1000ms_prev += 1000;
       //wetterdaten_anzeigen ();
       wetter_anzeigen = 1;
+
+      if (zeit_sekunden_bcd == 0) {
+        hist_store ();
+        menu_anzeigen = 1;
+      }
     }
 
     if (wetter_anzeigen) {

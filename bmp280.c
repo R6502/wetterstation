@@ -156,7 +156,7 @@ void bmp280_start (void)
   bmp280_id = bmp280_read_register (BMP280_ID_REG, 1); /* ID @d8 */
 
   if ((bmp280_id != BMP280_ID_VAL) && (bmp280_id != BME280_ID_VAL)) {
-    bmp280_id = 0;
+    //bmp280_id = 0;
     return;
   }
 
