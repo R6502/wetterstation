@@ -63,6 +63,7 @@ uint8_t  hist_show = 0;
 
 /******************************************************************************/
 
+
 void hist_store (void)
 {
   uint8_t index = hist_head++;
@@ -80,6 +81,7 @@ void hist_store (void)
   }
   hist_show = 0;
 } /* hist_store */
+
 
 /******************************************************************************/
 
@@ -156,7 +158,7 @@ void wetterdaten_anzeigen ()
   }
 
   /* Temperatur */
-  lcd_set_cursor (10, 1);
+  lcd_set_cursor (10, 0);
   if (bmp280_id) {
     lcd_print_decimal10 (bmp280_temp);
     lcd_print_text (" \337C");
@@ -165,14 +167,14 @@ void wetterdaten_anzeigen ()
   }
 
   /* Luftdruck */
-  lcd_set_cursor ( 0, 1);
+  lcd_set_cursor (10, 2);
   if (bmp280_id) {
     lcd_print_decimal10 (bmp280_pres);
     lcd_print_text (" hPa");
   }
 
   /* Luftfeuchte */
-  lcd_set_cursor (10, 2);
+  lcd_set_cursor (10, 1);
   if (bmp280_id == BME280_ID_VAL) {
     lcd_print_decimal10 (bmp280_humi);
     lcd_print_text (" %RH");
@@ -231,7 +233,7 @@ void menu (void)
   if (menu_mode == MENU_NORMAL) {
     lcd_print_text ("HIST: ");
     lcd_print_char ('0'+ hist_level);
-    lcd_print_text (" F1: + F2: - ");
+    lcd_print_text (" F1: < F2: > ");
   }
   else if (menu_mode == MENU_SETTIME) {
     lcd_print_text ("TIME: ");
@@ -357,7 +359,8 @@ void
     }
 
     if (zeit_anzeigen) {
-      lcd_set_cursor (12, 0);
+      //lcd_set_cursor (12, 0);
+      lcd_set_cursor ( 0, 0);
       zaehler_anzeigen (zeit_stunden_bcd);
       lcd_print_char (':');
       zaehler_anzeigen (zeit_minuten_bcd);
