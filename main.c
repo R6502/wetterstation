@@ -34,13 +34,14 @@ char text_buffer [MAX_TEXT_BUFFER];
 
 /******************************************************************************/
 
-void zaehler_anzeigen (uint8_t zaehler_wert);
+void bcd_zaehler_anzeigen (uint8_t zaehler_wert);
 
 /******************************************************************************/
 
 
 typedef struct history_s {
           uint8_t  seq;
+          uint8_t  version;
 
           uint8_t  zeit_minuten_bcd;
           uint8_t  zeit_stunden_bcd;
@@ -54,6 +55,8 @@ typedef struct history_s {
 #define HISTORY_MASK    0xf
 #define HISTORY_MAX     9
 
+#define HISTORY_VERSION 2
+
 HISTORY history [HISTORY_SIZE];
 
 uint8_t  hist_head = 0;
@@ -63,13 +66,17 @@ uint8_t  hist_show = 0;
 
 /******************************************************************************/
 
+#define EEPROM_RECORD_SIZE     32
+
 
 void hist_store (void)
 {
   uint8_t index = hist_head++;
 
   index &= HISTORY_MASK;
+
   history [index] .seq = hist_seq++;
+  history [index] .version = HISTORY_VERSION;
   history [index] .zeit_minuten_bcd  = zeit_minuten_bcd;
   history [index] .zeit_stunden_bcd  = zeit_stunden_bcd;
   history [index] .bmp280_temp = bmp280_temp;
@@ -79,7 +86,22 @@ void hist_store (void)
   if (hist_level < HISTORY_MAX) {
     hist_level++;
   }
+
   hist_show = 0;
+
+  { uint16_t addr = (uint16_t)index * EEPROM_RECORD_SIZE;
+    uint8_t *p_data = (uint8_t *) &history [index];
+    uint8_t n = 0;
+
+    i2c_start ();
+    i2c_write ((EEPROM_I2C_ADDR << 1) | I2C_WRITE);
+    i2c_write (addr >> 8);
+    i2c_write (addr);
+    for (n = 0; n < sizeof (HISTORY); n++) {
+      i2c_write (*p_data++);
+    }
+    i2c_stop ();
+  }
 } /* hist_store */
 
 
@@ -129,6 +151,8 @@ void wetterdaten_anzeigen ()
   //lcd_set_cursor (0, 2);
   //lcd_print_char ('0'+ hist_level);
 
+  bmp280_read ();
+
   if (hist_show) {
     uint8_t index = hist_head;
     index -= hist_show;
@@ -141,44 +165,46 @@ void wetterdaten_anzeigen ()
     bmp280_pres = history [index] .bmp280_pres;
     bmp280_humi = history [index] .bmp280_humi;
 
-    lcd_set_cursor (0, 2);
+    lcd_set_cursor (0, 3);
     //lcd_print_char ('/');
     lcd_print_char ('0'+ hist_show);
 
     lcd_print_char (':');
     lcd_print_char (' ');
 
-    zaehler_anzeigen (history [index] .zeit_stunden_bcd);
+    bcd_zaehler_anzeigen (history [index] .zeit_stunden_bcd);
     lcd_print_char (':');
-    zaehler_anzeigen (history [index] .zeit_minuten_bcd);
+    bcd_zaehler_anzeigen (history [index] .zeit_minuten_bcd);
+
+    //lcd_print_text ("          ");
   }
-  else {
-    lcd_print_text ("         ");
-    bmp280_read ();
-  }
+  //else {
+  //  //lcd_print_text ("         ");
+  //  bmp280_read ();
+  //}
 
   /* Temperatur */
   lcd_set_cursor (10, 0);
-  if (bmp280_id) {
+  //if (bmp280_id) {
     lcd_print_decimal10 (bmp280_temp);
     lcd_print_text (" \337C");
     //lcd_print_char (0xdf);
     //lcd_print_char ('C');
-  }
+  //}
 
   /* Luftdruck */
   lcd_set_cursor (10, 2);
-  if (bmp280_id) {
+  //if (bmp280_id) {
     lcd_print_decimal10 (bmp280_pres);
     lcd_print_text (" hPa");
-  }
+  //}
 
   /* Luftfeuchte */
   lcd_set_cursor (10, 1);
-  if (bmp280_id == BME280_ID_VAL) {
+  //if (bmp280_id == BME280_ID_VAL) {
     lcd_print_decimal10 (bmp280_humi);
     lcd_print_text (" %RH");
-  }
+  //}
 } /* wetterdaten anzeigen */
 
 
@@ -211,14 +237,14 @@ uint8_t zeit_weiter_eine_sekunde (void)
 } /* zeit_weiter_eine_sekunde */
 
 
-void zaehler_anzeigen (uint8_t zaehler_wert)
+void bcd_zaehler_anzeigen (uint8_t zaehler_wert)
 {
   uint8_t zehner = (zaehler_wert >> 4) & 0x0f;
   uint8_t einer =   zaehler_wert & 0x0f;
 
   lcd_print_char ('0' + zehner);
   lcd_print_char ('0' + einer);
-} /* zaehler_anzeigen */
+} /* bcd_zaehler_anzeigen */
 
 
 /*****************************************************************************************************/
@@ -231,15 +257,15 @@ void menu (void)
   lcd_set_cursor (0, 3);
 
   if (menu_mode == MENU_NORMAL) {
-    lcd_print_text ("HIST: ");
-    lcd_print_char ('0'+ hist_level);
-    lcd_print_text (" F1: < F2: > ");
+    lcd_print_text ("HIST:  ");
+    lcd_print_char ('0' + hist_level);
+    //lcd_print_text (" F1: < F2: > ");
   }
   else if (menu_mode == MENU_SETTIME) {
     lcd_print_text ("TIME: ");
-    zaehler_anzeigen (settime_stunden_bcd);
+    bcd_zaehler_anzeigen (settime_stunden_bcd);
     lcd_print_char (':');
-    zaehler_anzeigen (settime_minuten_bcd);
+    bcd_zaehler_anzeigen (settime_minuten_bcd);
     lcd_print_text (" #OK    ");
   }
 
@@ -282,6 +308,29 @@ void
   bmp280_start ();
 
   rtc_read ();
+
+  /* Load history */
+  { uint8_t index;
+    //uint8_t seq = 0;
+
+    for (index = 0; index < HISTORY_MASK; ++index) {
+      uint16_t addr = (uint16_t) index * EEPROM_RECORD_SIZE;
+
+      i2c_readmem (EEPROM_I2C_ADDR, addr, (uint8_t*) &history [index], sizeof (HISTORY));
+
+      if (history [index].version == HISTORY_VERSION) {
+        if ((index == 0) || (hist_seq == history [index] .seq)) {
+          hist_head++;
+          hist_level++;
+        }
+        hist_seq = history [index] .seq + 1;
+      }
+    }
+
+    if (hist_level > HISTORY_MAX) {
+      hist_level = HISTORY_MAX;
+    }
+  }
 
   menu_anzeigen = 1;
   menu ();
@@ -332,6 +381,7 @@ void
         }
         else if (taste == KEYCODE_F1) {
           if (hist_show > 0) hist_show--;
+          if (hist_show == 0) menu_anzeigen = 1;
           wetter_anzeigen = 1;
         }
         else if (taste == KEYCODE_F2) {
@@ -361,11 +411,11 @@ void
     if (zeit_anzeigen) {
       //lcd_set_cursor (12, 0);
       lcd_set_cursor ( 0, 0);
-      zaehler_anzeigen (zeit_stunden_bcd);
+      bcd_zaehler_anzeigen (zeit_stunden_bcd);
       lcd_print_char (':');
-      zaehler_anzeigen (zeit_minuten_bcd);
+      bcd_zaehler_anzeigen (zeit_minuten_bcd);
       lcd_print_char (':');
-      zaehler_anzeigen (zeit_sekunden_bcd);
+      bcd_zaehler_anzeigen (zeit_sekunden_bcd);
 
       zeit_anzeigen = 0;
     }

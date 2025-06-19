@@ -9,18 +9,19 @@
 
 /******************************************************************************/
 
-#define BMP280_ADDR     0x76    // can be 0x77 or 0x76
-
 #define BMP280_ID_REG           0xd0
 
 #define BMP280_CAL_REG_FIRST    0x88
 #define BMP280_CAL_REG_LAST     0xa1
-#define BMP280_CAL_DATA_SIZE    (BMP280_CAL_REG_LAST+1 - BMP280_CAL_REG_FIRST)
+//#define BMP280_CAL_DATA_SIZE    (BMP280_CAL_REG_LAST+1 - BMP280_CAL_REG_FIRST)
 
 /* extra BME280 */
 #define BME280_CAL_HUM_REG_FIRST 0xe1
 #define BME280_CAL_HUM_REG_LAST  0xe6
 #define BME280_CAL_HUM_DATA_SIZE (BME280_CAL_HUM_REG_LAST + 1 - BME280_CAL_HUM_REG_FIRST)
+#define BME280_CAL_HUM_OFFS      (BME280_CAL_HUM_REG_FIRST - BMP280_CAL_REG_FIRST)
+
+#define BMP280_CAL_DATA_SIZE_ALLES    (BME280_CAL_HUM_REG_LAST+1 - BMP280_CAL_REG_FIRST)
 
 #define BMP280_CONTROL_HUMI_REG 0xf2
 #define BMP280_STATUS_REG       0xf3
@@ -41,7 +42,7 @@ uint8_t  bmp280_id;
 /******************************************************************************/
 
 static union _bmp280_cal_union {
-         uint8_t bytes [BMP280_CAL_DATA_SIZE];
+         uint8_t bytes [BMP280_CAL_DATA_SIZE_ALLES];
          struct {
            uint16_t dig_t1;
            int16_t  dig_t2;
@@ -78,7 +79,7 @@ static struct _bme280_cal_hum_struct {
 void bmp280_write_register (uint8_t reg_addr, uint8_t value)
 {
   i2c_start ();
-  i2c_write ((BMP280_ADDR << 1) | I2C_WRITE);
+  i2c_write ((BMP280_I2C_ADDR << 1) | I2C_WRITE);
   i2c_write (reg_addr);
   i2c_write (value);
   i2c_stop ();
@@ -93,12 +94,12 @@ uint32_t bmp280_read_register (uint8_t reg_addr, uint8_t nbytes)
   if ((nbytes == 0) || (nbytes > 4)) return result32;
 
   i2c_start ();
-  i2c_write ((BMP280_ADDR << 1) | I2C_WRITE);
+  i2c_write ((BMP280_I2C_ADDR << 1) | I2C_WRITE);
   i2c_write (reg_addr);
   i2c_stop ();
 
   i2c_start ();
-  i2c_write((BMP280_ADDR << 1) | I2C_READ);
+  i2c_write((BMP280_I2C_ADDR << 1) | I2C_READ);
 
   while (nbytes > 0) {
     uint8_t ack = 1;
@@ -119,17 +120,20 @@ uint32_t bmp280_read_register (uint8_t reg_addr, uint8_t nbytes)
 } /* bmp280_read_register */
 
 
-void bmp280_readmem (uint8_t reg, uint8_t buff[], uint8_t bytes)
+void i2c_readmem (uint8_t i2caddr, uint16_t memaddr, uint8_t buff[], uint8_t bytes)
 {
   uint8_t i = 0;
 
   i2c_start ();
-  i2c_write ((BMP280_ADDR << 1) | I2C_WRITE);
-  i2c_write (reg);
+  i2c_write ((i2caddr << 1) | I2C_WRITE);
+  if (i2caddr == EEPROM_I2C_ADDR) {
+    i2c_write (memaddr >> 8);
+  }
+  i2c_write (memaddr);
   i2c_stop ();
 
   i2c_start ();
-  i2c_write ((BMP280_ADDR << 1) | I2C_READ);
+  i2c_write ((i2caddr << 1) | I2C_READ);
 
   for (i = 0; i < bytes; i++) {
     uint8_t ack = 1;
@@ -138,7 +142,7 @@ void bmp280_readmem (uint8_t reg, uint8_t buff[], uint8_t bytes)
   }
 
   i2c_stop();
-} /* bmp280_readmem */
+} /* i2c_readmem */
 
 
 void bmp280_start (void)
@@ -158,38 +162,40 @@ void bmp280_start (void)
 
   //bmp280_write_register (0xf4, mode);
 
-  bmp280_readmem (BMP280_CAL_REG_FIRST,
-                  bmp280_cal.bytes,
-                  BMP280_CAL_DATA_SIZE);
+  i2c_readmem (BMP280_I2C_ADDR,
+               BMP280_CAL_REG_FIRST,
+               bmp280_cal.bytes,
+               BMP280_CAL_DATA_SIZE_ALLES);
 
-  if (bmp280_id == BME280_ID_VAL) {
-    static uint8_t bytes [BME280_CAL_HUM_DATA_SIZE];
+  //if (bmp280_id == BME280_ID_VAL) {
+    //static uint8_t bytes [BME280_CAL_HUM_DATA_SIZE];
+    //
+    //i2c_readmem (BMP280_I2C_ADDR,
+    //             BME280_CAL_HUM_REG_FIRST,
+    //             bytes,
+    //             BME280_CAL_HUM_DATA_SIZE);
 
-    bmp280_readmem (BME280_CAL_HUM_REG_FIRST,
-                    bytes,
-                    BME280_CAL_HUM_DATA_SIZE);
-
-    bme280_cal_hum.dig_h2 = bytes [1]; /* E2 */
+    bme280_cal_hum.dig_h2 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 1]; /* E2 */
     bme280_cal_hum.dig_h2 <<= 8;
-    bme280_cal_hum.dig_h2 |= bytes [0]; /* E1 */
+    bme280_cal_hum.dig_h2 |= bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 0]; /* E1 */
 
-    bme280_cal_hum.dig_h3 = bytes [2]; /* E3 */
+    bme280_cal_hum.dig_h3 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 2]; /* E3 */
 
-    bme280_cal_hum.dig_h4 = bytes [3]; /* E4 */
+    bme280_cal_hum.dig_h4 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 3]; /* E4 */
     bme280_cal_hum.dig_h4 <<= 4;
-    bme280_cal_hum.dig_h4 |= bytes [4] & 0x0f; /* E5 */
+    bme280_cal_hum.dig_h4 |= bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 4] & 0x0f; /* E5 */
 
-    bme280_cal_hum.dig_h5 = bytes [5]; /* E6 */
+    bme280_cal_hum.dig_h5 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 5]; /* E6 */
     bme280_cal_hum.dig_h5 <<= 4;
-    bme280_cal_hum.dig_h5 |= (bytes [4] >> 4) & 0x0f; /* E5 */
+    bme280_cal_hum.dig_h5 |= (bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 4] >> 4) & 0x0f; /* E5 */
 
-    bme280_cal_hum.dig_h6 = bytes [5]; /* E7 */
-  }
+    bme280_cal_hum.dig_h6 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 5]; /* E7 */
+  //}
 
-  if (bmp280_id == BME280_ID_VAL) {
+  //if (bmp280_id == BME280_ID_VAL) {
     /* oversampling * 16 */
     bmp280_write_register (BMP280_CONTROL_HUMI_REG, 5);
-  }
+  //}
 
   /* 0.5 ms delay, 16x filter, no 3-wire SPI */
   bmp280_write_register (BMP280_CONFIG_REG,

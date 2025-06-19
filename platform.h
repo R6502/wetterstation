@@ -68,6 +68,9 @@ uint8_t i2c_read (uint8_t ch);
 
 /******************************************************************************/
 
+#define EEPROM_I2C_ADDR         0x50
+#define BMP280_I2C_ADDR         0x76    // can be 0x77 or 0x76
+
 #define BMP280_ID_VAL           0x58
 #define BME280_ID_VAL           0x60
 
@@ -75,6 +78,8 @@ extern int32_t  bmp280_temp;
 extern uint32_t bmp280_pres;
 extern uint32_t bmp280_humi;
 extern uint8_t  bmp280_id;
+
+void i2c_readmem (uint8_t i2caddr, uint16_t memaddr, uint8_t buff[], uint8_t bytes);
 
 /******************************************************************************/
 
