@@ -27,10 +27,10 @@ uint8_t keypad_read (void)
     /* Spalte auswÃ¤hlen */
     i2c_start ();
     i2c_write ((KEYPAD_I2C_ADDR << 1) | I2C_WRITE);
-    i2c_write (~(1 << col)); /* ausgewÃ¤hlte Spalte auf null setzen */
+    i2c_write (~(1 << col)); /* ausgewählte Spalte auf null setzen */
     i2c_stop ();
 
-    /* und nun vom Port-Expander die Werte fÃ¼r die Zeilen einlesen */
+    /* und nun vom Port-Expander die Werte für die Zeilen einlesen */
     i2c_start ();
     i2c_write ((KEYPAD_I2C_ADDR << 1) | I2C_READ);
 
