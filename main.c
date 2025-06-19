@@ -209,13 +209,13 @@ void wetterdaten_anzeigen ()
 
 
 /******************************************************************************/
-/* Zeitfunktion & Sekunden hochzählen */
+/* Zeitfunktion & Sekunden hochzÃ¤hlen */
 
 
 uint8_t bcd_plus_eins (uint8_t x, uint8_t limit)
 {
   x += 1;
-  if ((x & 0xf) >= 0x0a) { // BCD Überlauf
+  if ((x & 0xf) >= 0x0a) { // BCD Ãœberlauf
     x += 0x06;
   }
   if (x >= limit) x = 0;
@@ -227,9 +227,9 @@ uint8_t bcd_plus_eins (uint8_t x, uint8_t limit)
 uint8_t zeit_weiter_eine_sekunde (void)
 {
   zeit_sekunden_bcd = bcd_plus_eins (zeit_sekunden_bcd, 0x60);
-  if (zeit_sekunden_bcd == 0) { /* Sekunden Überlauf */
+  if (zeit_sekunden_bcd == 0) { /* Sekunden Ãœberlauf */
     zeit_minuten_bcd = bcd_plus_eins (zeit_minuten_bcd, 0x60);
-    if (zeit_minuten_bcd == 0) { /* Miuten-Überlauf */
+    if (zeit_minuten_bcd == 0) { /* Miuten-Ãœberlauf */
       zeit_stunden_bcd = bcd_plus_eins (zeit_stunden_bcd, 0x24);
     }
   }
@@ -286,7 +286,7 @@ void
 #endif
  main (void)
 {
-  /* einmalig ausführen */
+  /* einmalig ausfÃ¼hren */
   i2c_init ();
   timebase_init ();
 
@@ -342,7 +342,7 @@ void
 
     time_ms = millis ();
 
-    if ((time_ms - time_100ms_prev) >= 100) { // alle 100ms ausführen
+    if ((time_ms - time_100ms_prev) >= 100) { // alle 100ms ausfÃ¼hren
       uint8_t  taste = 0;
 
       taste = keypad_read ();
@@ -394,7 +394,7 @@ void
       menu ();
     }
 
-    if ((time_ms - time_1000ms_prev) >= 1000) { // alle Sekunde ausführen
+    if ((time_ms - time_1000ms_prev) >= 1000) { // alle Sekunde ausfÃ¼hren
       zeit_weiter_eine_sekunde ();
       zeit_anzeigen = 1;
       time_1000ms_prev += 1000;
