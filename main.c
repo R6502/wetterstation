@@ -317,7 +317,7 @@ void
 
       if (history [index].version == HISTORY_VERSION) {
         if (index == 0) {
-          hist_seq = history [index] .seq ;
+          hist_seq = history [index] .seq;
         }
         if (hist_seq == history [index] .seq) {
           hist_head++;
