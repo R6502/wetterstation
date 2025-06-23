@@ -10,7 +10,6 @@
 /******************************************************************************/
 
 uint16_t time_1000ms_prev = 0;
-uint16_t time_100ms_prev = 0;
 
 uint8_t zeit_sekunden_bcd = 0;
 uint8_t zeit_minuten_bcd = 0;
@@ -52,7 +51,7 @@ typedef struct history_s {
         } HISTORY;
 
 #define HISTORY_SIZE    16
-#define HISTORY_MASK    0xf
+#define HISTORY_MASK    ((HISTORY_SIZE) - 1)
 #define HISTORY_MAX     9
 
 #define HISTORY_VERSION 1
@@ -311,19 +310,26 @@ void
   /* Load history */
   { uint8_t index;
 
-    for (index = 0; index < HISTORY_MASK; ++index) {
+    for (index = 0; index < HISTORY_SIZE; ++index) {
       uint16_t addr = (uint16_t) index * EEPROM_RECORD_SIZE;
 
       i2c_readmem (EEPROM_I2C_ADDR, addr, (uint8_t*) &history [index], sizeof (HISTORY));
 
       if (history [index].version == HISTORY_VERSION) {
-        if ((index == 0) || (hist_seq == history [index] .seq)) {
-          hist_head++;
-          hist_level++;
+        if (index == 0) {
+          hist_seq = history [index] .seq ;
         }
-        hist_seq = history [index] .seq + 1;
+        if (hist_seq == history [index] .seq) {
+          hist_head++;
+          hist_seq++;
+        }
+      }
+      else {
+        break;
       }
     }
+
+    hist_level = index;
 
     if (hist_level > HISTORY_MAX) {
       hist_level = HISTORY_MAX;
@@ -342,8 +348,7 @@ void
 
     time_ms = millis ();
 
-    if ((time_ms - time_100ms_prev) >= 100) { // alle 100ms ausführen
-      uint8_t  taste = 0;
+    { uint8_t  taste = 0;
 
       taste = keypad_read ();
 
@@ -387,8 +392,6 @@ void
           if (hist_show < hist_level) hist_show++;
           wetter_anzeigen = 1;
         }
-
-        time_100ms_prev = time_ms;
       }
 
       menu ();
@@ -398,7 +401,6 @@ void
       zeit_weiter_eine_sekunde ();
       zeit_anzeigen = 1;
       time_1000ms_prev += 1000;
-      //wetterdaten_anzeigen ();
       wetter_anzeigen = 1;
 
       if (zeit_sekunden_bcd == 0) {
