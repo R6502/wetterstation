@@ -54,7 +54,7 @@ typedef struct history_s {
 #define HISTORY_MASK    ((HISTORY_SIZE) - 1)
 #define HISTORY_MAX     9
 
-#define HISTORY_VERSION 1
+#define HISTORY_VERSION 2
 
 HISTORY history [HISTORY_SIZE];
 
@@ -241,8 +241,8 @@ void bcd_zaehler_anzeigen (uint8_t zaehler_wert)
   uint8_t zehner = (zaehler_wert >> 4) & 0x0f;
   uint8_t einer =   zaehler_wert & 0x0f;
 
-  lcd_print_char ('0' + zehner);
-  lcd_print_char ('0' + einer);
+  if (zehner < 10) lcd_print_char ('0' + zehner); else lcd_print_char ('A' + zehner - 10);
+  if (einer  < 10) lcd_print_char ('0' + einer);  else lcd_print_char ('A' + einer - 10);
 } /* bcd_zaehler_anzeigen */
 
 
@@ -257,7 +257,14 @@ void menu (void)
 
   if (menu_mode == MENU_NORMAL) {
     lcd_print_text ("HIST:  ");
+
     lcd_print_char ('0' + hist_level);
+    lcd_print_char ('/');
+
+    bcd_zaehler_anzeigen (hist_head);
+    lcd_print_char ('/');
+    bcd_zaehler_anzeigen (hist_seq);
+
     //lcd_print_text (" F1: < F2: > ");
   }
   else if (menu_mode == MENU_SETTIME) {
@@ -317,7 +324,7 @@ void
 
       if (history [index].version == HISTORY_VERSION) {
         if (index == 0) {
-          hist_seq = history [index] .seq ;
+          hist_seq = history [index] .seq;
         }
         if (hist_seq == history [index] .seq) {
           hist_head++;
@@ -379,10 +386,10 @@ void
           menu_mode = MENU_NORMAL;
           lcd_clear ();
         }
-        //else if (taste == KEYCODE_F4) {
-        //  hist_store ();
-        //  menu_anzeigen = 1;
-        //}
+        else if (taste == KEYCODE_F4) {
+          hist_store ();
+          menu_anzeigen = 1;
+        }
         else if (taste == KEYCODE_F1) {
           if (hist_show > 0) hist_show--;
           if (hist_show == 0) menu_anzeigen = 1;
