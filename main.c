@@ -240,11 +240,14 @@ uint8_t zeit_weiter_eine_sekunde (void)
 
 void bcd_zaehler_anzeigen (uint8_t zaehler_wert)
 {
-  uint8_t zehner = (zaehler_wert >> 4) & 0x0f;
-  uint8_t einer =   zaehler_wert & 0x0f;
+  //uint8_t zehner = (zaehler_wert >> 4) & 0x0f;
+  //uint8_t einer =   zaehler_wert & 0x0f;
+  //
+  //lcd_print_char ('0' + zehner);
+  //lcd_print_char ('0' + einer);
 
-  lcd_print_char ('0' + zehner);
-  lcd_print_char ('0' + einer);
+  lcd_print_char ('0' + ((zaehler_wert >> 4) & 0x0f));
+  lcd_print_char ('0' + ( zaehler_wert & 0x0f));
 } /* bcd_zaehler_anzeigen */
 
 
@@ -366,7 +369,7 @@ void
       if (taste != KEYCODE_NONE) {
         if (taste == KEYCODE_0) taste = 0;
 
-        if (taste < 10) {
+        if ((taste < 10) && (hist_show == 0)) {
           settime_stunden_bcd <<= 4;
           settime_stunden_bcd |= settime_minuten_bcd >> 4;
           settime_minuten_bcd <<= 4;
