@@ -34,6 +34,7 @@ char text_buffer [MAX_TEXT_BUFFER];
 /******************************************************************************/
 
 void bcd_zaehler_anzeigen (uint8_t zaehler_wert);
+void index_anzeigen (uint8_t v);
 
 /******************************************************************************/
 
@@ -52,7 +53,7 @@ typedef struct history_s {
 
 #define HISTORY_SIZE    16
 #define HISTORY_MASK    ((HISTORY_SIZE) - 1)
-#define HISTORY_MAX     9
+#define HISTORY_MAX     12
 
 #define HISTORY_VERSION 1
 
@@ -166,7 +167,8 @@ void wetterdaten_anzeigen ()
 
     lcd_set_cursor (0, 3);
     //lcd_print_char ('/');
-    lcd_print_char ('0'+ hist_show);
+    //lcd_print_char ('0'+ hist_show);
+    index_anzeigen (hist_show);
 
     lcd_print_char (':');
     lcd_print_char (' ');
@@ -246,6 +248,14 @@ void bcd_zaehler_anzeigen (uint8_t zaehler_wert)
 } /* bcd_zaehler_anzeigen */
 
 
+void index_anzeigen (uint8_t v)
+{
+  if (v < 10) lcd_print_char (' ');
+         else lcd_print_char ('0' + v / 10);
+  lcd_print_char ('0' + v % 10);
+} /* index_anzeigen */
+
+
 /*****************************************************************************************************/
 
 
@@ -256,8 +266,9 @@ void menu (void)
   lcd_set_cursor (0, 3);
 
   if (menu_mode == MENU_NORMAL) {
-    lcd_print_text ("HIST:  ");
-    lcd_print_char ('0' + hist_level);
+    lcd_print_text ("nHIST: ");
+    //lcd_print_char ('0' + hist_level);
+    index_anzeigen (hist_level);
     //lcd_print_text (" F1: < F2: > ");
   }
   else if (menu_mode == MENU_SETTIME) {
