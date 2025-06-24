@@ -64,6 +64,8 @@ uint8_t  hist_level = 0;
 uint8_t  hist_seq = 0;
 uint8_t  hist_show = 0;
 
+uint8_t  wetter_ok = 0; /* nach dem Start erst warmlaufen lassen um korrekte Werte zu speichern */
+
 /******************************************************************************/
 
 #define EEPROM_RECORD_SIZE     32
@@ -87,7 +89,7 @@ void hist_store (void)
     hist_level++;
   }
 
-  hist_show = 0;
+  //hist_show = 0;
 
   { uint16_t addr = (uint16_t)index * EEPROM_RECORD_SIZE;
     uint8_t *p_data = (uint8_t *) &history [index];
@@ -153,10 +155,14 @@ void wetterdaten_anzeigen ()
 
   bmp280_read ();
 
+  if (wetter_ok < 10) wetter_ok++;
+
   if (hist_show) {
     uint8_t index = hist_head;
     index -= hist_show;
     index &= HISTORY_MASK;
+
+    //wetter_ok = 0;
 
     //history [index] .zeit_minuten_bcd  = zeit_minuten_bcd;
     //history [index] .zeit_stunden_bcd  = zeit_stunden_bcd;
@@ -418,13 +424,20 @@ void
       wetter_anzeigen = 1;
 
       if (zeit_sekunden_bcd == 0) {
-        hist_store ();
+        if (wetter_ok > 2) {
+          hist_show = 0;
+          wetter_anzeigen++;
+          //hist_store ();
+        }
         menu_anzeigen = 1;
       }
     }
 
     if (wetter_anzeigen) {
       wetterdaten_anzeigen ();
+      if (wetter_anzeigen == 2) {
+        hist_store ();
+      }
       wetter_anzeigen = 0;
     }
 
