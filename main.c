@@ -54,7 +54,7 @@ typedef struct history_s {
 #define HISTORY_MASK    ((HISTORY_SIZE) - 1)
 #define HISTORY_MAX     9
 
-#define HISTORY_VERSION 2
+#define HISTORY_VERSION 1
 
 HISTORY history [HISTORY_SIZE];
 
