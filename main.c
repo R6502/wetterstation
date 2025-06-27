@@ -34,6 +34,7 @@ char text_buffer [MAX_TEXT_BUFFER];
 /******************************************************************************/
 
 void bcd_zaehler_anzeigen (uint8_t zaehler_wert);
+void index_anzeigen (uint8_t v);
 
 /******************************************************************************/
 
@@ -52,7 +53,7 @@ typedef struct history_s {
 
 #define HISTORY_SIZE    16
 #define HISTORY_MASK    ((HISTORY_SIZE) - 1)
-#define HISTORY_MAX     9
+#define HISTORY_MAX     12
 
 #define HISTORY_VERSION 1
 
@@ -62,6 +63,8 @@ uint8_t  hist_head = 0;
 uint8_t  hist_level = 0;
 uint8_t  hist_seq = 0;
 uint8_t  hist_show = 0;
+
+uint8_t  wetter_ok = 0; /* nach dem Start erst warmlaufen lassen um korrekte Werte zu speichern */
 
 /******************************************************************************/
 
@@ -86,7 +89,7 @@ void hist_store (void)
     hist_level++;
   }
 
-  hist_show = 0;
+  //hist_show = 0;
 
   { uint16_t addr = (uint16_t)index * EEPROM_RECORD_SIZE;
     uint8_t *p_data = (uint8_t *) &history [index];
@@ -152,10 +155,14 @@ void wetterdaten_anzeigen ()
 
   bmp280_read ();
 
+  if (wetter_ok < 10) wetter_ok++;
+
   if (hist_show) {
     uint8_t index = hist_head;
     index -= hist_show;
     index &= HISTORY_MASK;
+
+    //wetter_ok = 0;
 
     //history [index] .zeit_minuten_bcd  = zeit_minuten_bcd;
     //history [index] .zeit_stunden_bcd  = zeit_stunden_bcd;
@@ -166,7 +173,8 @@ void wetterdaten_anzeigen ()
 
     lcd_set_cursor (0, 3);
     //lcd_print_char ('/');
-    lcd_print_char ('0'+ hist_show);
+    //lcd_print_char ('0'+ hist_show);
+    index_anzeigen (hist_show);
 
     lcd_print_char (':');
     lcd_print_char (' ');
@@ -238,12 +246,23 @@ uint8_t zeit_weiter_eine_sekunde (void)
 
 void bcd_zaehler_anzeigen (uint8_t zaehler_wert)
 {
-  uint8_t zehner = (zaehler_wert >> 4) & 0x0f;
-  uint8_t einer =   zaehler_wert & 0x0f;
+  //uint8_t zehner = (zaehler_wert >> 4) & 0x0f;
+  //uint8_t einer =   zaehler_wert & 0x0f;
+  //
+  //lcd_print_char ('0' + zehner);
+  //lcd_print_char ('0' + einer);
 
-  if (zehner < 10) lcd_print_char ('0' + zehner); else lcd_print_char ('A' + zehner - 10);
-  if (einer  < 10) lcd_print_char ('0' + einer);  else lcd_print_char ('A' + einer - 10);
+  lcd_print_char ('0' + ((zaehler_wert >> 4) & 0x0f));
+  lcd_print_char ('0' + ( zaehler_wert & 0x0f));
 } /* bcd_zaehler_anzeigen */
+
+
+void index_anzeigen (uint8_t v)
+{
+  if (v < 10) lcd_print_char (' ');
+         else lcd_print_char ('0' + v / 10);
+  lcd_print_char ('0' + v % 10);
+} /* index_anzeigen */
 
 
 /*****************************************************************************************************/
@@ -256,15 +275,18 @@ void menu (void)
   lcd_set_cursor (0, 3);
 
   if (menu_mode == MENU_NORMAL) {
-    lcd_print_text ("HIST:  ");
+    // lcd_print_text ("HIST:  ");
+    //
+    // lcd_print_char ('0' + hist_level);
+    // lcd_print_char ('/');
+    //
+    // bcd_zaehler_anzeigen (hist_head);
+    // lcd_print_char ('/');
+    // bcd_zaehler_anzeigen (hist_seq);
 
-    lcd_print_char ('0' + hist_level);
-    lcd_print_char ('/');
-
-    bcd_zaehler_anzeigen (hist_head);
-    lcd_print_char ('/');
-    bcd_zaehler_anzeigen (hist_seq);
-
+    lcd_print_text ("nHIST: ");
+    //lcd_print_char ('0' + hist_level);
+    index_anzeigen (hist_level);
     //lcd_print_text (" F1: < F2: > ");
   }
   else if (menu_mode == MENU_SETTIME) {
@@ -362,7 +384,7 @@ void
       if (taste != KEYCODE_NONE) {
         if (taste == KEYCODE_0) taste = 0;
 
-        if (taste < 10) {
+        if ((taste < 10) && (hist_show == 0)) {
           settime_stunden_bcd <<= 4;
           settime_stunden_bcd |= settime_minuten_bcd >> 4;
           settime_minuten_bcd <<= 4;
@@ -411,13 +433,20 @@ void
       wetter_anzeigen = 1;
 
       if (zeit_sekunden_bcd == 0) {
-        hist_store ();
+        if (wetter_ok > 2) {
+          hist_show = 0;
+          wetter_anzeigen++;
+          //hist_store ();
+        }
         menu_anzeigen = 1;
       }
     }
 
     if (wetter_anzeigen) {
       wetterdaten_anzeigen ();
+      if (wetter_anzeigen == 2) {
+        hist_store ();
+      }
       wetter_anzeigen = 0;
     }
 
