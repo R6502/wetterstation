@@ -4,6 +4,9 @@
 #define PLATFORM_H
 
 /******************************************************************************/
+/* Deklaration von Basisfunktionen fürs Projekt Wetterstation */
+
+/******************************************************************************/
 
 #if defined (__AVR__)
 /* AVR GCC */
@@ -36,10 +39,6 @@ void lcd_init (void);
 void lcd_clear (void);
 void lcd_home (void);
 void lcd_set_cursor (uint8_t col, uint8_t row);
-//void lcd_display_off (void);
-//void lcd_display_on (void);
-//void lcd_backlight_off (void);
-//void lcd_backlight_on (void);
 void lcd_command (uint8_t cmd);
 void lcd_write_8bit (uint8_t value, uint8_t mode);
 void lcd_write_4bit (uint8_t data);
