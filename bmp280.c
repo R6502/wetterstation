@@ -41,6 +41,8 @@ uint8_t  bmp280_id;
 
 /******************************************************************************/
 
+/* Kalibrierdaten des Sensors, werden einmal beim Start ausgelesen und sind für die
+   nachfolgenden Korrekturrechnungen erforderlich */
 static union _bmp280_cal_union {
          uint8_t bytes [BMP280_CAL_DATA_SIZE_ALLES];
          struct {
@@ -75,7 +77,8 @@ static struct _bme280_cal_hum_struct {
 
 /******************************************************************************/
 
-
+/* Schreiben eines Registers des BME280, übergeben wird die Register-Adresse sowie
+   der zuschreibende Wert, jeweils 8Bit */
 void bmp280_write_register (uint8_t reg_addr, uint8_t value)
 {
   i2c_start ();
@@ -86,29 +89,39 @@ void bmp280_write_register (uint8_t reg_addr, uint8_t value)
 } /* bmp280_write_register */
 
 
+/* Lesen eines Registers des BME280, übergeben wird die Register-Adresse sowie
+   die Anzahl der zulesenden Bytes. Gelesen werden Registerwerte bis maximal
+   vier Byte (32Bit) */
 uint32_t bmp280_read_register (uint8_t reg_addr, uint8_t nbytes)
 {
   uint32_t result32 = 0;
   uint8_t regval = 0;
 
+  /* Parameterprüfung: nbytes mindestens ein Byte, max vier Byte */
   if ((nbytes == 0) || (nbytes > 4)) return result32;
 
+  /* Dem Sensor die Register-Adresse mitteilen */
   i2c_start ();
   i2c_write ((BMP280_I2C_ADDR << 1) | I2C_WRITE);
   i2c_write (reg_addr);
   i2c_stop ();
 
+  /* dann das Lesen der Daten beginnen */
   i2c_start ();
   i2c_write((BMP280_I2C_ADDR << 1) | I2C_READ);
 
   while (nbytes > 0) {
     uint8_t ack = 1;
 
+    /* Beim letzten Byte senden wir kein ACK */
     if (nbytes == 1) ack = 0;
 
+    /* ein Byte lesen ... */
     regval = i2c_read (ack);
 
+    /* ... und zum Gesamtergebnis hinzufügen. Dazu den bisher gelesenen Wert um 8 Bit nach links schieben ... */
     result32 <<= 8;
+    /* ... und dann das neue Byte einsetzen */
     result32 |= regval;
 
     nbytes -= 1;
@@ -145,57 +158,40 @@ void i2c_readmem (uint8_t i2caddr, uint16_t memaddr, uint8_t buff[], uint8_t byt
 } /* i2c_readmem */
 
 
+/* Den Sensor starten, dazu die Kalibrierwerte auslesen und dann den Messmode starten */
 void bmp280_start (void)
 {
-  //uint8_t mode = 0;
-  //
-  //mode |= 3; /* normal mode */
-  //mode |= 1 << 2; /* osrs_p = 1 -> 16bit */
-  //mode |= 1 << 5; /* osrs_r = 1 -> 16bit */
-
   bmp280_id = bmp280_read_register (BMP280_ID_REG, 1); /* ID @d8 */
 
   if ((bmp280_id != BMP280_ID_VAL) && (bmp280_id != BME280_ID_VAL)) {
-    //bmp280_id = 0;
     return;
   }
 
-  //bmp280_write_register (0xf4, mode);
-
+  /* Auslesen des kompletten Datenblocks mit den Kalibrierdaten */
   i2c_readmem (BMP280_I2C_ADDR,
                BMP280_CAL_REG_FIRST,
                bmp280_cal.bytes,
                BMP280_CAL_DATA_SIZE_ALLES);
 
-  //if (bmp280_id == BME280_ID_VAL) {
-    //static uint8_t bytes [BME280_CAL_HUM_DATA_SIZE];
-    //
-    //i2c_readmem (BMP280_I2C_ADDR,
-    //             BME280_CAL_HUM_REG_FIRST,
-    //             bytes,
-    //             BME280_CAL_HUM_DATA_SIZE);
+  /* Umrechnung entsprechend den Vorgaben von Bosch */
+  bme280_cal_hum.dig_h2 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 1]; /* E2 */
+  bme280_cal_hum.dig_h2 <<= 8;
+  bme280_cal_hum.dig_h2 |= bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 0]; /* E1 */
 
-    bme280_cal_hum.dig_h2 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 1]; /* E2 */
-    bme280_cal_hum.dig_h2 <<= 8;
-    bme280_cal_hum.dig_h2 |= bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 0]; /* E1 */
+  bme280_cal_hum.dig_h3 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 2]; /* E3 */
 
-    bme280_cal_hum.dig_h3 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 2]; /* E3 */
+  bme280_cal_hum.dig_h4 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 3]; /* E4 */
+  bme280_cal_hum.dig_h4 <<= 4;
+  bme280_cal_hum.dig_h4 |= bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 4] & 0x0f; /* E5 */
 
-    bme280_cal_hum.dig_h4 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 3]; /* E4 */
-    bme280_cal_hum.dig_h4 <<= 4;
-    bme280_cal_hum.dig_h4 |= bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 4] & 0x0f; /* E5 */
+  bme280_cal_hum.dig_h5 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 5]; /* E6 */
+  bme280_cal_hum.dig_h5 <<= 4;
+  bme280_cal_hum.dig_h5 |= (bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 4] >> 4) & 0x0f; /* E5 */
 
-    bme280_cal_hum.dig_h5 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 5]; /* E6 */
-    bme280_cal_hum.dig_h5 <<= 4;
-    bme280_cal_hum.dig_h5 |= (bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 4] >> 4) & 0x0f; /* E5 */
+  bme280_cal_hum.dig_h6 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 5]; /* E7 */
 
-    bme280_cal_hum.dig_h6 = bmp280_cal.bytes [BME280_CAL_HUM_OFFS + 5]; /* E7 */
-  //}
-
-  //if (bmp280_id == BME280_ID_VAL) {
-    /* oversampling * 16 */
-    bmp280_write_register (BMP280_CONTROL_HUMI_REG, 5);
-  //}
+  /* oversampling * 16 einstellen */
+  bmp280_write_register (BMP280_CONTROL_HUMI_REG, 5);
 
   /* 0.5 ms delay, 16x filter, no 3-wire SPI */
   bmp280_write_register (BMP280_CONFIG_REG,
@@ -212,6 +208,11 @@ void bmp280_start (void)
 } /* bmp280_start  */
 
 
+/* Auslesen und Umrechnen der Umweltdaten. Wird vom Hauptprogramm zyklisch aufgerufen
+   Die Umrechnung erfolgt in Anlehnung an Referenz-Implementiereun von Bosch. Teile davon
+   wurden deaktiviert um die Limitierung der Codevision Demo-Software einzuhalten.
+   Auf den ersten Blick ist dadurch keine Verschlechterung der Sensordaten ersichtlich.
+ */
 void bmp280_read (void)
 {
   uint32_t temp_raw = 0;
@@ -227,13 +228,19 @@ void bmp280_read (void)
     return;
   }
 
+  /* jeweils 24Bit Rohdaten für Temperatur und Luftdruck lesen */
   temp_raw = bmp280_read_register (0xfa, 3); /* temp */
   pres_raw = bmp280_read_register (0xf7, 3); /* press */
 
+
   if (bmp280_id == BME280_ID_VAL) {
+    /* 16Bit Rohdaten für Luftfeuchtigkeit */
     humi_raw = bmp280_read_register (0xfd, 2); /* humidity */
   }
 
+  /* Ab hier Umrechnung aus Referenz-Implementierung, Details unklar .... */
+
+  /* Division durch 16 */
   temp_raw >>= 4;
   pres_raw >>= 4;
 
@@ -251,10 +258,9 @@ void bmp280_read (void)
 
   t_fine = var1 + var2;
 
-  //bmp280_temp = (t_fine * 5 + 128) >> 8;
   bmp280_temp = (t_fine + 256) >> 9;
 
-  // compute the pressure
+  /* compute the pressure */
   var1 = (((int32_t)t_fine) >> 1) - (int32_t)64000;
   var2 = (((var1 >> 2) * (var1 >> 2)) >> 11) * ((int32_t)bmp280_cal.v.dig_p6);
   var2 = var2 + ((var1 * ((int32_t)bmp280_cal.v.dig_p5)) << 1);
@@ -264,24 +270,11 @@ void bmp280_read (void)
   var1 = ((((32768 + var1)) * ((int32_t)bmp280_cal.v.dig_p1)) >> 15);
 
   if (var1 != 0) {
-    //bmp280_pres = (((uint32_t)(((int32_t)1048576) - pres_raw) - (var2 >> 12))) * 626;
-    //bmp280_pres /= (uint32_t)var1;
-
-    //bmp280_pres = (((uint32_t)(((int32_t)1048576) - pres_raw) - (var2 >> 12))) * 3125;
     bmp280_pres = (((uint32_t)(((int32_t)1048576) - pres_raw) - (var2 >> 12))) * 625;
-    //if (bmp280_pres < 0x80000000) {
-    //  bmp280_pres = (bmp280_pres << 1) / ((uint32_t)var1);
-    //}
-    //else {
-      //bmp280_pres = (bmp280_pres / (uint32_t)var1) * 2;
-      bmp280_pres = (bmp280_pres / (uint32_t)var1);
-    //}
-    //var1 = (((int32_t)bmp280_cal.v.dig_p9) * ((int32_t)(((bmp280_pres>>3) * (bmp280_pres >> 3)) >> 13))) >> 12;
-    //var2 = (((int32_t)(bmp280_pres >> 2)) * ((int32_t)bmp280_cal.v.dig_p8)) >> 13;
-    //bmp280_pres = (uint32_t)((int32_t)bmp280_pres + ((var1 + var2 + bmp280_cal.v.dig_p7) >> 4));
-    //bmp280_pres /= 10;
+    bmp280_pres = (bmp280_pres / (uint32_t)var1);
   }
 
+  /* compute humidity (nur wenn wir den BME280 haben) */
   if (bmp280_id == BME280_ID_VAL) {
     int32_t var1;
     int32_t var2;
@@ -290,11 +283,9 @@ void bmp280_read (void)
     int32_t var5;
 
     var1 = t_fine - ((int32_t)76800);
-    //var2 = (int32_t)(humi_raw * 16384);
     var3 = (int32_t)(((int32_t)bme280_cal_hum.dig_h4) * 1048576);
     var4 = ((int32_t)bme280_cal_hum.dig_h5) * var1;
 
-    //var5 = (((var2 - var3) - var4) + (int32_t)16384) / 32768;
     var5 = ((((humi_raw * 16384) - var3) - var4) + (int32_t)16384) / 32768;
 
     var2 = (var1 * ((int32_t)bme280_cal_hum.dig_h6)) / 1024;
@@ -305,15 +296,8 @@ void bmp280_read (void)
     var2 = ((var4 * ((int32_t)bme280_cal_hum.dig_h2)) + 8192) / 16384;
 
     var3 = var5 * var2;
-    //var4 = ((var3 / 32768) * (var3 / 32768)) / 128;
     var5 = var3; // - ((var4 * ((int32_t)bmp280_cal.v.dig_h1)) / 16);
-    //var5 = (var5 < 0 ? 0 : var5);
-    //var5 = (var5 > 419430400 ? 419430400 : var5);
     bmp280_humi = (uint32_t)(var5 / 419439ul);
-
-    //bmp280_humi = (uint32_t)(var5 / 4096);
-    //bmp280_humi *= 10;
-    //bmp280_humi /= 1024;
   }
 } /* bmp280_read */
 

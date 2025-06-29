@@ -16,9 +16,6 @@
 
 #define LCD_I2C_ADDR        0x27
 
-/* Langsamer, aber weniger Code */
-#define OPT_I2C_SINGLE_BYTE_ACCESS
-
 /******************************************************************************/
 
 // commands
@@ -137,94 +134,61 @@ void lcd_init (void)
 
 void lcd_clear (void)
 {
-  lcd_command (LCD_CLEARDISPLAY);// clear display, set cursor position to zero
-  mdelay_ms (2);  // this command takes a long time!
+  lcd_command (LCD_CLEARDISPLAY); /* clear display, set cursor position to zero */
+  mdelay_ms (2);  /* this command takes a long time! */
 } /* lcd_clear */
 
 
 void lcd_home (void)
 {
-  lcd_command (LCD_RETURNHOME);  // set cursor position to zero
-  mdelay_ms (2);  // this command takes a long time!
+  lcd_command (LCD_RETURNHOME);  /* set cursor position to zero */
+  mdelay_ms (2);  /* this command takes a long time! */
 } /* lcd_home */
 
 
+/* Cursorposition (Spalte + Zeile) setzen */
 void lcd_set_cursor (uint8_t col, uint8_t row)
 {
+  /* kleines Array mit den RAM-Adressen der jeweiligen Zeilen */
   static uint8_t row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
   lcd_command (LCD_SETDDRAMADDR | (col + row_offsets [row]));
 } /* lcd_set_cursor */
 
 
+/* Ein Kommando ans Display schicken ... */
 void lcd_command (uint8_t cmd)
 {
+  /* ... 8Bit schreiben mit RS = 0 */
   lcd_write_8bit (cmd, 0);
 } /* lcd_command */
 
 
+/* 8Bit ins Display schreiben. Da das Display im 4Bit-Mode betrieben wird,
+   teilen wir die Daten in ein low- und high-Nibble auf schicken es jeweils
+   mit der Funktion lcd_write_4bit ans Display.
+   Mit dem Parameter 'mode' legen wir fest ob es ein Kommando sein soll oder ein
+   Zeichen geschrieben wird. */
 void lcd_write_8bit (uint8_t value, uint8_t mode)
 {
   uint8_t high_nibble =  value       & 0xf0;
   uint8_t low_nibble  = (value << 4) & 0xf0;
 
-#if defined (OPT_I2C_SINGLE_BYTE_ACCESS)
-
   lcd_write_4bit (high_nibble | mode);
   lcd_write_4bit (low_nibble  | mode);
-
-#else
-
-  high_nibble |= mode;
-  low_nibble  |= mode;
-
-  high_nibble |= LCD_BACKLIGHT;
-  low_nibble  |= LCD_BACKLIGHT;
-
-  i2c_start ();
-  i2c_write (LCD_I2C_ADDR << 1);
-
-  i2c_write (high_nibble);
-  i2c_write (high_nibble | LCD_CONTROL_EN);
-
-  i2c_write (high_nibble);
-
-  i2c_write (low_nibble);
-  i2c_write (low_nibble | LCD_CONTROL_EN);
-
-  i2c_write (low_nibble);
-
-  i2c_stop ();
-
-#endif
 } /* lcd_write_8bit */
 
 
+/* 4Bit ins Display schreiben, dazu erst die Daten ausgeben, dann einen 1-0-Puls auf EN ausgeben.
+   Die Daten dürfen sich dabei nicht ändern. */
 void lcd_write_4bit (uint8_t data)
 {
-#if defined (OPT_I2C_SINGLE_BYTE_ACCESS)
-
   lcd_expander_write (data);
-
-  lcd_expander_write (data | LCD_CONTROL_EN);     // En high
-
-  lcd_expander_write (data & ~LCD_CONTROL_EN); // En low
-
-#else
-
-  i2c_start ();
-  i2c_write (LCD_I2C_ADDR << 1);
-
-  i2c_write (data);
-  i2c_write (data | LCD_CONTROL_EN);
-
-  i2c_write (data);
-
-  i2c_stop ();
-
-#endif
+  lcd_expander_write (data | LCD_CONTROL_EN);   /* En high */
+  lcd_expander_write (data & ~LCD_CONTROL_EN);  /* En low */
 } /* lcd_write_4bit */
 
 
+/* Ein 8Bit-Datenwort auf den I2C-Port-Expander schreiben */
 void lcd_expander_write (uint8_t data)
 {
   i2c_start ();
@@ -234,15 +198,20 @@ void lcd_expander_write (uint8_t data)
 } /* lcd_expander_write */
 
 
+/* Ein einzelnes Zeichen aufs Display schreiben ... */
 void lcd_print_char (uint8_t ch)
 {
+  /* ... dazu 8Bit ausgeben mit dem RS-Signal auf 1 */
   lcd_write_8bit (ch, LCD_CONTROL_RS);
 } /* lcd_print_char */
 
 
+/* Einen Text-String ausgeben, Übergabe Zeiger auf den Text, Endekennung durch null-Byte*/
 void lcd_print_text (const char *text)
 {
+  /* solange das aktuelle Zeichen ungeleich null ist ... */
   while (*text) {
+    /* das Zeichen ausgeben und den Zeiger um eins erhöhen */
     lcd_print_char (*text++);
   }
 } /* lcd_print_text */
